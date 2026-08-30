@@ -96,9 +96,21 @@ export function FoodSearch({
     try {
       const res = await fetch(`/api/foods/${food.fdcId}`);
       if (res.ok) {
-        const payload = (await res.json()) as { food: FoodItem };
-        setSelected(payload.food);
-        rememberFood(payload.food);
+        const payload = (await res.json()) as {
+          food: FoodItem;
+          source?: "usda" | "mock";
+        };
+        const detailed = payload.food;
+        // Sample FDC IDs can collide with unrelated USDA entries under DEMO_KEY.
+        // Keep the food the user clicked when the detail payload doesn't match.
+        const clickedLabel = food.description.split(",")[0]?.toLowerCase() ?? "";
+        const detailMatches =
+          detailed.fdcId === food.fdcId &&
+          (payload.source === "mock" ||
+            detailed.description.toLowerCase().includes(clickedLabel));
+        const next = detailMatches ? detailed : food;
+        setSelected(next);
+        if (detailMatches) rememberFood(detailed);
       } else {
         setSelected(food);
       }
@@ -234,32 +246,9 @@ export function FoodSearch({
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent className="max-h-[90dvh] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-3xl border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-lg">
           <DialogHeader>
-            <div className="flex items-start gap-2 pr-6">
-              <DialogTitle className="flex-1 font-[family-name:var(--font-display)] text-xl font-semibold leading-snug">
-                {selected?.description}
-              </DialogTitle>
-              {selected && (
-                <button
-                  type="button"
-                  onClick={() => toggleFavorite(selected)}
-                  className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-[color:var(--quiet)] transition-colors hover:bg-[color:var(--mist)] hover:text-[color:var(--brand)]"
-                  aria-label={
-                    selectedIsFavorite
-                      ? "Remove from favorites"
-                      : "Add to favorites"
-                  }
-                  aria-pressed={selectedIsFavorite}
-                >
-                  <Star
-                    className={cn(
-                      "size-5",
-                      selectedIsFavorite &&
-                        "fill-[color:var(--brand)] text-[color:var(--brand)]",
-                    )}
-                  />
-                </button>
-              )}
-            </div>
+            <DialogTitle className="pr-8 font-[family-name:var(--font-display)] text-xl font-semibold leading-snug">
+              {selected?.description}
+            </DialogTitle>
           </DialogHeader>
           {detailLoading || !selected ? (
             <div className="flex items-center gap-2 py-8 text-sm text-[color:var(--quiet)]">
@@ -303,12 +292,35 @@ export function FoodSearch({
               {scaled && (
                 <NutrientPanel nutrients={scaled} perLabel={`${grams}g`} />
               )}
-              <Button
-                onClick={confirmLog}
-                className="h-12 w-full rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
-              >
-                Add to diary
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => selected && toggleFavorite(selected)}
+                  className="h-12 shrink-0 rounded-full border-[color:var(--line)] px-4"
+                  aria-label={
+                    selectedIsFavorite
+                      ? "Remove from favorites"
+                      : "Add to favorites"
+                  }
+                  aria-pressed={selectedIsFavorite}
+                >
+                  <Star
+                    className={cn(
+                      "size-4",
+                      selectedIsFavorite &&
+                        "fill-[color:var(--brand)] text-[color:var(--brand)]",
+                    )}
+                  />
+                  {selectedIsFavorite ? "Saved" : "Favorite"}
+                </Button>
+                <Button
+                  onClick={confirmLog}
+                  className="h-12 flex-1 rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
+                >
+                  Add to diary
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
