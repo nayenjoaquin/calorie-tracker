@@ -27,6 +27,7 @@ import {
   loadAppData,
   saveAppData,
   toggleFavoriteFood,
+  updateDisplayName,
   updateGoals,
   upsertRecipe,
   upsertWeight,
@@ -44,6 +45,7 @@ type StoreContextValue = {
   setGoals: (goals: Goals) => void;
   rememberFood: (food: FoodItem) => void;
   toggleFavorite: (food: FoodItem) => void;
+  setDisplayName: (displayName: string) => void;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -98,6 +100,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setData((prev) => toggleFavoriteFood(prev, food));
   }, []);
 
+  const setDisplayName = useCallback((displayName: string) => {
+    setData((prev) => updateDisplayName(prev, displayName));
+  }, []);
+
   const value = useMemo(
     () => ({
       data,
@@ -111,6 +117,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setGoals,
       rememberFood,
       toggleFavorite,
+      setDisplayName,
     }),
     [
       data,
@@ -124,6 +131,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setGoals,
       rememberFood,
       toggleFavorite,
+      setDisplayName,
     ],
   );
 

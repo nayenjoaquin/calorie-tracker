@@ -13,6 +13,7 @@ const MAX_RECENT_FOODS = 20;
 
 export function createDefaultData(): AppData {
   return {
+    displayName: "",
     recipes: [],
     diary: [],
     weights: [],
@@ -29,6 +30,8 @@ export function loadAppData(): AppData {
     if (!raw) return createDefaultData();
     const parsed = JSON.parse(raw) as Partial<AppData>;
     return {
+      displayName:
+        typeof parsed.displayName === "string" ? parsed.displayName : "",
       recipes: parsed.recipes ?? [],
       diary: parsed.diary ?? [],
       weights: parsed.weights ?? [],
@@ -102,6 +105,10 @@ export function toggleFavoriteFood(data: AppData, food: FoodItem): AppData {
 
 export function isFavoriteFood(data: AppData, fdcId: number): boolean {
   return data.favoriteFoods.some((f) => f.fdcId === fdcId);
+}
+
+export function updateDisplayName(data: AppData, displayName: string): AppData {
+  return { ...data, displayName: displayName.trim() };
 }
 
 export function todayISO(): string {
