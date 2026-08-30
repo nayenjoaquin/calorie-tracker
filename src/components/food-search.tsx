@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { Loader2, Search } from "lucide-react";
-import type { FoodItem, MealType } from "@/lib/types";
+import type { FoodItem, FoodPortion, MealType } from "@/lib/types";
 import { scaleNutrients } from "@/lib/nutrients";
 import { newId, todayISO } from "@/lib/storage";
 import { useStore } from "@/components/store-provider";
@@ -18,11 +18,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 type SearchPayload = {
@@ -31,14 +31,55 @@ type SearchPayload = {
   message?: string;
 };
 
+type UnitMode = "grams" | "portion";
+
 const MEALS: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+
+function isMealType(value: string | undefined | null): value is MealType {
+  return (
+    value === "breakfast" ||
+    value === "lunch" ||
+    value === "dinner" ||
+    value === "snack"
+  );
+}
+
+function isISODate(value: string | undefined | null): value is string {
+  if (!value) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(`${value}T12:00:00`);
+  return !Number.isNaN(d.getTime());
+}
+
+function resolveGrams(
+  unitMode: UnitMode,
+  grams: string,
+  portions: FoodPortion[] | undefined,
+  portionIndex: number,
+  portionQty: string,
+): number | null {
+  if (unitMode === "grams") {
+    const g = Number(grams);
+    return Number.isFinite(g) && g > 0 ? g : null;
+  }
+  const portion = portions?.[portionIndex];
+  const qty = Number(portionQty);
+  if (!portion || !Number.isFinite(qty) || qty <= 0) return null;
+  return portion.gramWeight * qty;
+}
 
 export function FoodSearch({
   mode = "log",
   onPick,
+  initialMeal,
+  initialDate,
 }: {
   mode?: "log" | "pick";
   onPick?: (food: FoodItem) => void;
+  /** Optional preselect from `?meal=` (compatible with diary meal-add links) */
+  initialMeal?: string | null;
+  /** Optional log date from `?date=` */
+  initialDate?: string | null;
 }) {
   const { logEntry } = useStore();
   const [query, setQuery] = useState("");
@@ -48,8 +89,18 @@ export function FoodSearch({
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<FoodItem | null>(null);
   const [grams, setGrams] = useState("100");
-  const [meal, setMeal] = useState<MealType>("lunch");
+  const [unitMode, setUnitMode] = useState<UnitMode>("grams");
+  const [portionIndex, setPortionIndex] = useState(0);
+  const [portionQty, setPortionQty] = useState("1");
+  const [meal, setMeal] = useState<MealType>(
+    isMealType(initialMeal) ? initialMeal : "lunch",
+  );
+  const logDate = isISODate(initialDate) ? initialDate : todayISO();
   const [detailLoading, setDetailLoading] = useState(false);
+
+  useEffect(() => {
+    if (isMealType(initialMeal)) setMeal(initialMeal);
+  }, [initialMeal]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query.trim()), 350);
@@ -73,6 +124,13 @@ export function FoodSearch({
     });
   }, [debounced]);
 
+  function resetAmountState() {
+    setGrams("100");
+    setUnitMode("grams");
+    setPortionIndex(0);
+    setPortionQty("1");
+  }
+
   async function openFood(food: FoodItem) {
     if (mode === "pick" && onPick) {
       onPick(food);
@@ -80,12 +138,17 @@ export function FoodSearch({
     }
 
     setDetailLoading(true);
-    setGrams("100");
+    resetAmountState();
+    setSelected(food);
     try {
       const res = await fetch(`/api/foods/${food.fdcId}`);
       if (res.ok) {
         const data = (await res.json()) as { food: FoodItem };
         setSelected(data.food);
+        setUnitMode("grams");
+        setPortionIndex(0);
+        setPortionQty("1");
+        setGrams("100");
       } else {
         setSelected(food);
       }
@@ -98,11 +161,17 @@ export function FoodSearch({
 
   function confirmLog() {
     if (!selected) return;
-    const g = Number(grams);
-    if (!Number.isFinite(g) || g <= 0) return;
+    const g = resolveGrams(
+      unitMode,
+      grams,
+      selected.portions,
+      portionIndex,
+      portionQty,
+    );
+    if (g == null) return;
     logEntry({
       id: newId(),
-      date: todayISO(),
+      date: logDate,
       meal,
       name: selected.description,
       source: "food",
@@ -113,10 +182,26 @@ export function FoodSearch({
     setSelected(null);
   }
 
+  const hasPortions = (selected?.portions?.length ?? 0) > 0;
+  const effectiveGrams = selected
+    ? resolveGrams(
+        unitMode,
+        grams,
+        selected.portions,
+        portionIndex,
+        portionQty,
+      )
+    : null;
   const scaled =
-    selected && Number(grams) > 0
-      ? scaleNutrients(selected.nutrientsPer100g, Number(grams))
+    selected && effectiveGrams != null
+      ? scaleNutrients(selected.nutrientsPer100g, effectiveGrams)
       : null;
+  const perLabel =
+    effectiveGrams != null
+      ? unitMode === "portion" && selected?.portions?.[portionIndex]
+        ? `${portionQty} × ${selected.portions[portionIndex].label} (${Math.round(effectiveGrams)}g)`
+        : `${effectiveGrams}g`
+      : "";
 
   return (
     <div className="space-y-3">
@@ -177,31 +262,81 @@ export function FoodSearch({
         )}
       </ul>
 
-      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-h-[90dvh] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-3xl border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="font-[family-name:var(--font-display)] text-xl font-semibold leading-snug">
+      <Sheet open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[92dvh] gap-0 overflow-y-auto rounded-t-[1.75rem] border-[color:var(--line)] bg-[color:var(--surface)] p-0 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-18px_48px_-28px_rgba(15,157,138,0.45)]"
+        >
+          <div
+            className="mx-auto mt-3 h-1.5 w-11 shrink-0 rounded-full bg-[color:var(--brand-soft)]"
+            aria-hidden
+          />
+          <SheetHeader className="px-5 pb-2 pt-3 text-left">
+            <SheetTitle className="font-[family-name:var(--font-display)] text-xl font-semibold leading-snug text-[color:var(--ink)]">
               {selected?.description}
-            </DialogTitle>
-          </DialogHeader>
+            </SheetTitle>
+          </SheetHeader>
           {detailLoading || !selected ? (
-            <div className="flex items-center gap-2 py-8 text-sm text-[color:var(--quiet)]">
+            <div className="flex items-center gap-2 px-5 py-10 text-sm text-[color:var(--quiet)]">
               <Loader2 className="size-4 animate-spin" /> Loading nutrients…
             </div>
           ) : (
-            <div className="space-y-5">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="grams">Amount (g)</Label>
-                  <Input
-                    id="grams"
-                    type="number"
-                    min={1}
-                    value={grams}
-                    onChange={(e) => setGrams(e.target.value)}
-                    className="h-11 rounded-xl"
-                  />
+            <div className="space-y-5 px-5 pb-5 pt-1">
+              {hasPortions && (
+                <div
+                  className="grid grid-cols-2 gap-1 rounded-2xl bg-[color:var(--mist)] p-1"
+                  role="tablist"
+                  aria-label="Amount unit"
+                >
+                  {(["grams", "portion"] as const).map((modeOption) => (
+                    <button
+                      key={modeOption}
+                      type="button"
+                      role="tab"
+                      aria-selected={unitMode === modeOption}
+                      onClick={() => setUnitMode(modeOption)}
+                      className={cn(
+                        "h-10 rounded-xl text-sm font-medium transition-colors",
+                        unitMode === modeOption
+                          ? "bg-[color:var(--brand)] text-white shadow-sm"
+                          : "text-[color:var(--ink-soft)] hover:text-[color:var(--ink)]",
+                      )}
+                    >
+                      {modeOption === "grams" ? "Grams" : "Portion"}
+                    </button>
+                  ))}
                 </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                {unitMode === "grams" || !hasPortions ? (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="grams">Amount (g)</Label>
+                    <Input
+                      id="grams"
+                      type="number"
+                      min={1}
+                      inputMode="decimal"
+                      value={grams}
+                      onChange={(e) => setGrams(e.target.value)}
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="portion-qty">Quantity</Label>
+                    <Input
+                      id="portion-qty"
+                      type="number"
+                      min={0.1}
+                      step="0.1"
+                      inputMode="decimal"
+                      value={portionQty}
+                      onChange={(e) => setPortionQty(e.target.value)}
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label>Meal</Label>
                   <Select
@@ -223,19 +358,57 @@ export function FoodSearch({
                   </Select>
                 </div>
               </div>
-              {scaled && (
-                <NutrientPanel nutrients={scaled} perLabel={`${grams}g`} />
+
+              {unitMode === "portion" && hasPortions && (
+                <div className="space-y-1.5">
+                  <Label>Portion</Label>
+                  <Select
+                    value={String(portionIndex)}
+                    onValueChange={(v) => {
+                      if (v != null) setPortionIndex(Number(v));
+                    }}
+                  >
+                    <SelectTrigger className="h-11 w-full rounded-xl">
+                      <SelectValue
+                        placeholder="Choose portion"
+                      >
+                        {selected.portions![portionIndex]
+                          ? `${selected.portions![portionIndex].label} · ${Math.round(selected.portions![portionIndex].gramWeight)}g`
+                          : null}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selected.portions!.map((portion, idx) => (
+                        <SelectItem
+                          key={`${portion.label}-${portion.gramWeight}-${idx}`}
+                          value={String(idx)}
+                          label={`${portion.label} · ${Math.round(portion.gramWeight)}g`}
+                        >
+                          {portion.label} · {Math.round(portion.gramWeight)}g
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {effectiveGrams != null && (
+                    <p className="text-xs text-[color:var(--quiet)]">
+                      Equals {Math.round(effectiveGrams * 10) / 10}g
+                    </p>
+                  )}
+                </div>
               )}
+
+              {scaled && <NutrientPanel nutrients={scaled} perLabel={perLabel} />}
               <Button
                 onClick={confirmLog}
+                disabled={effectiveGrams == null}
                 className="h-12 w-full rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
               >
                 Add to diary
               </Button>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

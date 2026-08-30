@@ -1,4 +1,4 @@
-import type { FoodItem } from "./types";
+import type { FoodItem, FoodPortion } from "./types";
 import { parseUsdaNutrients } from "./nutrients";
 import { getMockFood, searchMockFoods } from "./mock-foods";
 
@@ -21,6 +21,18 @@ type UsdaSearchFood = {
   }>;
 };
 
+type UsdaFoodPortion = {
+  gramWeight?: number;
+  amount?: number;
+  modifier?: string;
+  portionDescription?: string;
+  measureUnit?: {
+    id?: number;
+    name?: string;
+    abbreviation?: string;
+  };
+};
+
 type UsdaFoodDetail = {
   fdcId: number;
   description: string;
@@ -32,7 +44,77 @@ type UsdaFoodDetail = {
     amount?: number;
     value?: number;
   }>;
+  foodPortions?: UsdaFoodPortion[];
 };
+
+function isUndeterminedUnit(unit?: UsdaFoodPortion["measureUnit"]): boolean {
+  if (!unit) return true;
+  if (unit.id === 9999) return true;
+  const name = unit.name?.trim().toLowerCase();
+  return !name || name === "undetermined";
+}
+
+function formatAmount(amount: number): string {
+  return Number.isInteger(amount) ? String(amount) : String(amount);
+}
+
+/** Build a human label like "1 cup" / "1 NLEA serving" from USDA portion fields. */
+export function formatFoodPortionLabel(portion: UsdaFoodPortion): string | null {
+  const desc = portion.portionDescription?.trim();
+  if (desc) return desc;
+
+  const amount =
+    portion.amount != null && Number.isFinite(portion.amount) && portion.amount > 0
+      ? portion.amount
+      : null;
+  const amountStr = amount != null ? formatAmount(amount) : null;
+  const modifier = portion.modifier?.trim() || null;
+
+  if (isUndeterminedUnit(portion.measureUnit)) {
+    // SR Legacy / Survey-style: amount + modifier (e.g. "1 cup, sliced")
+    if (amountStr && modifier) return `${amountStr} ${modifier}`;
+    if (modifier) return modifier;
+    return null;
+  }
+
+  const unitName = portion.measureUnit?.name?.trim();
+  const unitAbbrev = portion.measureUnit?.abbreviation?.trim();
+  const unit =
+    unitAbbrev && unitAbbrev.toLowerCase() !== "undetermined"
+      ? unitAbbrev
+      : unitName!;
+
+  let label = amountStr ? `${amountStr} ${unit}` : unit;
+  if (modifier && modifier.toLowerCase() !== "undetermined") {
+    label = `${label} ${modifier}`;
+  }
+  return label;
+}
+
+export function mapFoodPortions(
+  portions: UsdaFoodPortion[] | undefined,
+): FoodPortion[] | undefined {
+  if (!portions?.length) return undefined;
+
+  const mapped: FoodPortion[] = [];
+  const seen = new Set<string>();
+
+  for (const portion of portions) {
+    const gramWeight = portion.gramWeight;
+    if (gramWeight == null || !Number.isFinite(gramWeight) || gramWeight <= 0) {
+      continue;
+    }
+    const label = formatFoodPortionLabel(portion);
+    if (!label) continue;
+
+    const key = `${label.toLowerCase()}|${gramWeight}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    mapped.push({ label, gramWeight });
+  }
+
+  return mapped.length ? mapped : undefined;
+}
 
 function mapSearchFood(item: UsdaSearchFood): FoodItem {
   return {
@@ -45,12 +127,14 @@ function mapSearchFood(item: UsdaSearchFood): FoodItem {
 }
 
 function mapDetailFood(item: UsdaFoodDetail): FoodItem {
+  const portions = mapFoodPortions(item.foodPortions);
   return {
     fdcId: item.fdcId,
     description: item.description,
     brandOwner: item.brandOwner,
     dataType: item.dataType ?? "Unknown",
     nutrientsPer100g: parseUsdaNutrients(item.foodNutrients),
+    ...(portions ? { portions } : {}),
   };
 }
 

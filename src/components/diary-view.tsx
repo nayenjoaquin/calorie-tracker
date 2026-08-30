@@ -9,7 +9,7 @@ import {
   MacroStrip,
   NutrientPanel,
 } from "@/components/nutrient-panel";
-import { WeekDayBar, useDaySwipe } from "@/components/week-day-bar";
+import { WeekDayBar, useDaySwipe, useAnimatedDate, DaySlide } from "@/components/week-day-bar";
 import {
   multiplyNutrients,
   recipeNutrientsPerServing,
@@ -40,12 +40,13 @@ const MEALS: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
 export function DiaryView() {
   const { data, ready, removeEntry, logEntry } = useStore();
-  const [date, setDate] = useState(todayISO());
+  const { date, setDate, dir, dragX, setDragX, animKey } =
+    useAnimatedDate(todayISO());
   const [recipeOpen, setRecipeOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<string | null>(null);
   const [servings, setServings] = useState("1");
   const [meal, setMeal] = useState<MealType>("lunch");
-  const daySwipe = useDaySwipe(date, setDate);
+  const daySwipe = useDaySwipe(date, setDate, setDragX);
 
   const markedDates = useMemo(
     () => new Set(data.diary.map((e) => e.date)),
@@ -120,7 +121,7 @@ export function DiaryView() {
 
   return (
     <div className="space-y-6" {...daySwipe}>
-      <section className="animate-rise space-y-4">
+      <section className="space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[color:var(--ink)]">
@@ -146,107 +147,131 @@ export function DiaryView() {
           date={date}
           onChange={setDate}
           markedDates={markedDates}
+          dragX={dragX}
+          onDragX={setDragX}
         />
 
-        <div className="rounded-[1.5rem] bg-[color:var(--surface)]/90 p-5 shadow-[0_18px_40px_-28px_rgba(16,24,32,0.35)] ring-1 ring-[color:var(--line)]/70">
-          <CalorieHero calories={totals.calories} goal={data.goals.calories} />
-          <div className="mt-5 border-t border-[color:var(--line)]/80 pt-4">
-            <MacroStrip
-              nutrients={totals}
-              goals={data.goals}
-              hideCalories
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="animate-rise-delay flex gap-2">
-        <Link
-          href="/foods"
-          className={cn(
-            buttonVariants({ variant: "default" }),
-            "h-11 flex-1 rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]",
-          )}
+        <DaySlide
+          animKey={`${date}-${animKey}`}
+          dir={dir}
+          dragX={dragX}
+          className="space-y-6"
         >
-          <Plus className="size-4" /> Add food
-        </Link>
-        <Button
-          variant="outline"
-          className="h-11 rounded-full border-[color:var(--line)] px-4"
-          onClick={() => {
-            setSelectedRecipe(data.recipes[0]?.id ?? null);
-            setServings("1");
-            setRecipeOpen(true);
-          }}
-          disabled={data.recipes.length === 0}
-        >
-          Recipe
-        </Button>
-      </section>
-
-      <section className="animate-rise-delay-2 space-y-5">
-        {MEALS.map((m) => (
-          <div key={m} className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h2 className="font-[family-name:var(--font-display)] text-base font-semibold capitalize text-[color:var(--ink)]">
-                {m}
-              </h2>
-              <span className="text-xs tabular-nums text-[color:var(--quiet)]">
-                {Math.round(
-                  byMeal[m].reduce((a, e) => a + e.nutrients.calories, 0),
-                )}{" "}
-                kcal
-              </span>
+          <div className="rounded-[1.5rem] bg-[color:var(--surface)]/90 p-5 shadow-[0_18px_40px_-28px_rgba(16,24,32,0.35)] ring-1 ring-[color:var(--line)]/70">
+            <CalorieHero calories={totals.calories} goal={data.goals.calories} />
+            <div className="mt-5 border-t border-[color:var(--line)]/80 pt-4">
+              <MacroStrip
+                nutrients={totals}
+                goals={data.goals}
+                hideCalories
+              />
             </div>
-            {byMeal[m].length === 0 ? (
-              <p className="rounded-2xl bg-[color:var(--mist)]/70 px-4 py-3 text-sm text-[color:var(--quiet)]">
-                Nothing logged
-              </p>
-            ) : (
-              <ul className="overflow-hidden rounded-2xl bg-[color:var(--surface)] ring-1 ring-[color:var(--line)]/80">
-                {byMeal[m].map((entry, idx) => (
-                  <li
-                    key={entry.id}
-                    className={cn(
-                      "flex items-start justify-between gap-3 px-4 py-3",
-                      idx > 0 && "border-t border-[color:var(--line)]/70",
-                    )}
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-[color:var(--ink)]">
-                        {entry.name}
-                      </p>
-                      <p className="mt-0.5 text-xs text-[color:var(--quiet)]">
-                        {entry.source === "recipe"
-                          ? "Recipe"
-                          : `${entry.grams}g`}{" "}
-                        · {Math.round(entry.nutrients.calories)} kcal · P{" "}
-                        {entry.nutrients.protein} · C {entry.nutrients.carbs} ·
-                        F {entry.nutrients.fat}
-                      </p>
-                    </div>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label="Remove entry"
-                      className="touch-target shrink-0"
-                      onClick={() => removeEntry(entry.id)}
-                    >
-                      <Trash2 className="size-4 text-[color:var(--quiet)]" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
-        ))}
-      </section>
 
-      {dayEntries.length > 0 && (
-        <section className="rounded-[1.25rem] bg-[color:var(--surface)]/90 p-4 ring-1 ring-[color:var(--line)]/70">
-          <NutrientPanel nutrients={totals} perLabel="day total" />
-        </section>
-      )}
+          <section>
+            <Button
+              variant="outline"
+              className="h-11 rounded-full border-[color:var(--line)] px-5"
+              onClick={() => {
+                setSelectedRecipe(data.recipes[0]?.id ?? null);
+                setServings("1");
+                setRecipeOpen(true);
+              }}
+              disabled={data.recipes.length === 0}
+            >
+              Recipe
+            </Button>
+          </section>
+
+          <section className="space-y-5">
+            {MEALS.map((m) => {
+              const addHref = `/foods?meal=${m}&date=${encodeURIComponent(date)}`;
+              const mealKcal = Math.round(
+                byMeal[m].reduce((a, e) => a + e.nutrients.calories, 0),
+              );
+              return (
+                <div key={m} className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="font-[family-name:var(--font-display)] text-base font-semibold capitalize text-[color:var(--ink)]">
+                      {m}
+                    </h2>
+                    <span className="text-xs tabular-nums text-[color:var(--quiet)]">
+                      {mealKcal} kcal
+                    </span>
+                  </div>
+                  {byMeal[m].length === 0 ? (
+                    <div className="flex items-center justify-between gap-3 rounded-2xl bg-[color:var(--mist)]/70 px-4 py-3">
+                      <p className="text-sm text-[color:var(--quiet)]">
+                        Nothing logged
+                      </p>
+                      <Link
+                        href={addHref}
+                        className={cn(
+                          buttonVariants({ variant: "ghost", size: "sm" }),
+                          "h-9 shrink-0 rounded-full px-3 text-[color:var(--brand)] hover:bg-[color:var(--brand)]/10 hover:text-[color:var(--brand-deep)]",
+                        )}
+                      >
+                        <Plus className="size-3.5" /> Add
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="overflow-hidden rounded-2xl bg-[color:var(--surface)] ring-1 ring-[color:var(--line)]/80">
+                      <ul>
+                        {byMeal[m].map((entry, idx) => (
+                          <li
+                            key={entry.id}
+                            className={cn(
+                              "flex items-start justify-between gap-3 px-4 py-3",
+                              idx > 0 && "border-t border-[color:var(--line)]/70",
+                            )}
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-[color:var(--ink)]">
+                                {entry.name}
+                              </p>
+                              <p className="mt-0.5 text-xs text-[color:var(--quiet)]">
+                                {entry.source === "recipe"
+                                  ? "Recipe"
+                                  : `${entry.grams}g`}{" "}
+                                · {Math.round(entry.nutrients.calories)} kcal · P{" "}
+                                {entry.nutrients.protein} · C{" "}
+                                {entry.nutrients.carbs} · F {entry.nutrients.fat}
+                              </p>
+                            </div>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              aria-label="Remove entry"
+                              className="touch-target shrink-0"
+                              onClick={() => removeEntry(entry.id)}
+                            >
+                              <Trash2 className="size-4 text-[color:var(--quiet)]" />
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="border-t border-[color:var(--line)]/70">
+                        <Link
+                          href={addHref}
+                          className="flex h-11 w-full items-center justify-center gap-1.5 text-sm font-medium text-[color:var(--brand)] transition-colors active:bg-[color:var(--mist)] hover:bg-[color:var(--mist)]"
+                        >
+                          <Plus className="size-3.5" /> Add
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </section>
+
+          {dayEntries.length > 0 && (
+            <section className="rounded-[1.25rem] bg-[color:var(--surface)]/90 p-4 ring-1 ring-[color:var(--line)]/70">
+              <NutrientPanel nutrients={totals} perLabel="day total" />
+            </section>
+          )}
+        </DaySlide>
+      </section>
 
       <Dialog open={recipeOpen} onOpenChange={setRecipeOpen}>
         <DialogContent className="max-w-[calc(100%-1.5rem)] rounded-3xl border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-md">
