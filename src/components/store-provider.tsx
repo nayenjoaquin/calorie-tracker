@@ -12,18 +12,21 @@ import {
 import type {
   AppData,
   DiaryEntry,
+  FoodItem,
   Goals,
   Recipe,
   WeightEntry,
 } from "@/lib/types";
 import {
   addDiaryEntry,
+  addRecentFood,
   createDefaultData,
   deleteDiaryEntry,
   deleteRecipe,
   deleteWeight,
   loadAppData,
   saveAppData,
+  toggleFavoriteFood,
   updateGoals,
   upsertRecipe,
   upsertWeight,
@@ -39,6 +42,8 @@ type StoreContextValue = {
   saveWeight: (entry: WeightEntry) => void;
   removeWeight: (id: string) => void;
   setGoals: (goals: Goals) => void;
+  rememberFood: (food: FoodItem) => void;
+  toggleFavorite: (food: FoodItem) => void;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -85,6 +90,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setData((prev) => updateGoals(prev, goals));
   }, []);
 
+  const rememberFood = useCallback((food: FoodItem) => {
+    setData((prev) => addRecentFood(prev, food));
+  }, []);
+
+  const toggleFavorite = useCallback((food: FoodItem) => {
+    setData((prev) => toggleFavoriteFood(prev, food));
+  }, []);
+
   const value = useMemo(
     () => ({
       data,
@@ -96,6 +109,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       saveWeight,
       removeWeight,
       setGoals,
+      rememberFood,
+      toggleFavorite,
     }),
     [
       data,
@@ -107,6 +122,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       saveWeight,
       removeWeight,
       setGoals,
+      rememberFood,
+      toggleFavorite,
     ],
   );
 

@@ -1,6 +1,7 @@
 import type {
   AppData,
   DiaryEntry,
+  FoodItem,
   Goals,
   Recipe,
   WeightEntry,
@@ -8,6 +9,7 @@ import type {
 import { DEFAULT_GOALS } from "./types";
 
 const STORAGE_KEY = "platewise-data-v1";
+const MAX_RECENT_FOODS = 20;
 
 export function createDefaultData(): AppData {
   return {
@@ -15,6 +17,8 @@ export function createDefaultData(): AppData {
     diary: [],
     weights: [],
     goals: { ...DEFAULT_GOALS },
+    recentFoods: [],
+    favoriteFoods: [],
   };
 }
 
@@ -29,6 +33,8 @@ export function loadAppData(): AppData {
       diary: parsed.diary ?? [],
       weights: parsed.weights ?? [],
       goals: { ...DEFAULT_GOALS, ...parsed.goals },
+      recentFoods: parsed.recentFoods ?? [],
+      favoriteFoods: parsed.favoriteFoods ?? [],
     };
   } catch {
     return createDefaultData();
@@ -76,6 +82,26 @@ export function deleteWeight(data: AppData, id: string): AppData {
 
 export function updateGoals(data: AppData, goals: Goals): AppData {
   return { ...data, goals };
+}
+
+export function addRecentFood(data: AppData, food: FoodItem): AppData {
+  const recentFoods = [
+    food,
+    ...data.recentFoods.filter((f) => f.fdcId !== food.fdcId),
+  ].slice(0, MAX_RECENT_FOODS);
+  return { ...data, recentFoods };
+}
+
+export function toggleFavoriteFood(data: AppData, food: FoodItem): AppData {
+  const exists = data.favoriteFoods.some((f) => f.fdcId === food.fdcId);
+  const favoriteFoods = exists
+    ? data.favoriteFoods.filter((f) => f.fdcId !== food.fdcId)
+    : [food, ...data.favoriteFoods];
+  return { ...data, favoriteFoods };
+}
+
+export function isFavoriteFood(data: AppData, fdcId: number): boolean {
+  return data.favoriteFoods.some((f) => f.fdcId === fdcId);
 }
 
 export function todayISO(): string {

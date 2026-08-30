@@ -79,6 +79,8 @@ export type AppData = {
   diary: DiaryEntry[];
   weights: WeightEntry[];
   goals: Goals;
+  recentFoods: FoodItem[];
+  favoriteFoods: FoodItem[];
 };
 
 export const EMPTY_NUTRIENTS: Nutrients = {

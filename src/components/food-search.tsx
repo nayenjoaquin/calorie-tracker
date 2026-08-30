@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, Star } from "lucide-react";
 import type { FoodItem, MealType } from "@/lib/types";
 import { scaleNutrients } from "@/lib/nutrients";
 import { newId, todayISO } from "@/lib/storage";
@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 type SearchPayload = {
@@ -30,6 +31,8 @@ type SearchPayload = {
   source: "usda" | "mock";
   message?: string;
 };
+
+type BrowseTab = "search" | "recent" | "favorites";
 
 const MEALS: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
@@ -40,9 +43,10 @@ export function FoodSearch({
   mode?: "log" | "pick";
   onPick?: (food: FoodItem) => void;
 }) {
-  const { logEntry } = useStore();
+  const { data, logEntry, rememberFood, toggleFavorite } = useStore();
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
+  const [tab, setTab] = useState<BrowseTab>("search");
   const [result, setResult] = useState<SearchPayload | null>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +61,7 @@ export function FoodSearch({
   }, [query]);
 
   useEffect(() => {
+    if (tab !== "search") return;
     startTransition(async () => {
       setError(null);
       try {
@@ -71,9 +76,16 @@ export function FoodSearch({
         setResult(null);
       }
     });
-  }, [debounced]);
+  }, [debounced, tab]);
+
+  function onQueryChange(value: string) {
+    setQuery(value);
+    if (value.trim() && tab !== "search") setTab("search");
+  }
 
   async function openFood(food: FoodItem) {
+    rememberFood(food);
+
     if (mode === "pick" && onPick) {
       onPick(food);
       return;
@@ -84,8 +96,9 @@ export function FoodSearch({
     try {
       const res = await fetch(`/api/foods/${food.fdcId}`);
       if (res.ok) {
-        const data = (await res.json()) as { food: FoodItem };
-        setSelected(data.food);
+        const payload = (await res.json()) as { food: FoodItem };
+        setSelected(payload.food);
+        rememberFood(payload.food);
       } else {
         setSelected(food);
       }
@@ -118,71 +131,135 @@ export function FoodSearch({
       ? scaleNutrients(selected.nutrientsPer100g, Number(grams))
       : null;
 
+  const favoriteIds = new Set(data.favoriteFoods.map((f) => f.fdcId));
+  const selectedIsFavorite = selected
+    ? favoriteIds.has(selected.fdcId)
+    : false;
+
   return (
     <div className="space-y-3">
       <div className="relative">
         <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[color:var(--quiet)]" />
         <Input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Search foods…"
           className="h-12 rounded-2xl border-[color:var(--line)] bg-[color:var(--surface)] pl-11 text-base shadow-sm"
           aria-label="Search foods"
         />
       </div>
 
-      <div className="flex min-h-5 items-center gap-2 px-1 text-xs text-[color:var(--quiet)]">
-        {pending && (
-          <>
-            <Loader2 className="size-3.5 animate-spin" /> Searching…
-          </>
-        )}
-        {!pending && result?.source === "usda" && (
-          <span>Live USDA FoodData Central</span>
-        )}
-        {!pending && result?.source === "mock" && result.message && (
-          <span>{result.message}</span>
-        )}
-        {error && <span className="text-destructive">{error}</span>}
-      </div>
+      <Tabs
+        value={tab}
+        onValueChange={(value) => {
+          if (value === "search" || value === "recent" || value === "favorites") {
+            setTab(value);
+          }
+        }}
+        className="gap-3"
+      >
+        <TabsList className="h-10 w-full rounded-2xl bg-[color:var(--mist)] p-1">
+          <TabsTrigger
+            value="search"
+            className="h-full flex-1 rounded-xl data-active:bg-[color:var(--surface)] data-active:text-[color:var(--ink)] data-active:shadow-sm"
+          >
+            Search
+          </TabsTrigger>
+          <TabsTrigger
+            value="recent"
+            className="h-full flex-1 rounded-xl data-active:bg-[color:var(--surface)] data-active:text-[color:var(--ink)] data-active:shadow-sm"
+          >
+            Recent
+          </TabsTrigger>
+          <TabsTrigger
+            value="favorites"
+            className="h-full flex-1 rounded-xl data-active:bg-[color:var(--surface)] data-active:text-[color:var(--ink)] data-active:shadow-sm"
+          >
+            Favorites
+          </TabsTrigger>
+        </TabsList>
 
-      <ul className="overflow-hidden rounded-2xl bg-[color:var(--surface)] ring-1 ring-[color:var(--line)]/80">
-        {(result?.foods ?? []).length === 0 && !pending ? (
-          <li className="px-4 py-10 text-center text-sm text-[color:var(--quiet)]">
-            No foods yet. Try another search.
-          </li>
-        ) : (
-          (result?.foods ?? []).map((food, idx) => (
-            <li
-              key={food.fdcId}
-              className={cn(
-                idx > 0 && "border-t border-[color:var(--line)]/70",
-              )}
-            >
-              <button
-                type="button"
-                onClick={() => openFood(food)}
-                className="flex w-full flex-col gap-0.5 px-4 py-3.5 text-left transition-colors active:bg-[color:var(--mist)] hover:bg-[color:var(--mist)]"
-              >
-                <span className="text-sm font-medium leading-snug text-[color:var(--ink)]">
-                  {food.description}
-                </span>
-                <span className="text-xs text-[color:var(--quiet)]">
-                  {Math.round(food.nutrientsPer100g.calories)} kcal / 100g
-                  {food.dataType ? ` · ${food.dataType}` : ""}
-                </span>
-              </button>
-            </li>
-          ))
-        )}
-      </ul>
+        <TabsContent value="search" className="space-y-3">
+          <div className="flex min-h-5 items-center gap-2 px-1 text-xs text-[color:var(--quiet)]">
+            {pending && (
+              <>
+                <Loader2 className="size-3.5 animate-spin" /> Searching…
+              </>
+            )}
+            {!pending && result?.source === "usda" && (
+              <span>Live USDA FoodData Central</span>
+            )}
+            {!pending && result?.source === "mock" && result.message && (
+              <span>{result.message}</span>
+            )}
+            {error && <span className="text-destructive">{error}</span>}
+          </div>
+          <FoodList
+            foods={result?.foods ?? []}
+            emptyLabel="No foods yet. Try another search."
+            pending={pending}
+            favoriteIds={favoriteIds}
+            onOpen={openFood}
+            onToggleFavorite={toggleFavorite}
+          />
+        </TabsContent>
+
+        <TabsContent value="recent" className="space-y-3">
+          <p className="px-1 text-xs text-[color:var(--quiet)]">
+            Foods you opened recently
+          </p>
+          <FoodList
+            foods={data.recentFoods}
+            emptyLabel="No recent searches yet. Open a food to save it here."
+            favoriteIds={favoriteIds}
+            onOpen={openFood}
+            onToggleFavorite={toggleFavorite}
+          />
+        </TabsContent>
+
+        <TabsContent value="favorites" className="space-y-3">
+          <p className="px-1 text-xs text-[color:var(--quiet)]">
+            Star foods to keep them handy
+          </p>
+          <FoodList
+            foods={data.favoriteFoods}
+            emptyLabel="No favorites yet. Tap the star on any food."
+            favoriteIds={favoriteIds}
+            onOpen={openFood}
+            onToggleFavorite={toggleFavorite}
+          />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent className="max-h-[90dvh] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-3xl border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-[family-name:var(--font-display)] text-xl font-semibold leading-snug">
-              {selected?.description}
-            </DialogTitle>
+            <div className="flex items-start gap-2 pr-6">
+              <DialogTitle className="flex-1 font-[family-name:var(--font-display)] text-xl font-semibold leading-snug">
+                {selected?.description}
+              </DialogTitle>
+              {selected && (
+                <button
+                  type="button"
+                  onClick={() => toggleFavorite(selected)}
+                  className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-[color:var(--quiet)] transition-colors hover:bg-[color:var(--mist)] hover:text-[color:var(--brand)]"
+                  aria-label={
+                    selectedIsFavorite
+                      ? "Remove from favorites"
+                      : "Add to favorites"
+                  }
+                  aria-pressed={selectedIsFavorite}
+                >
+                  <Star
+                    className={cn(
+                      "size-5",
+                      selectedIsFavorite &&
+                        "fill-[color:var(--brand)] text-[color:var(--brand)]",
+                    )}
+                  />
+                </button>
+              )}
+            </div>
           </DialogHeader>
           {detailLoading || !selected ? (
             <div className="flex items-center gap-2 py-8 text-sm text-[color:var(--quiet)]">
@@ -237,5 +314,79 @@ export function FoodSearch({
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function FoodList({
+  foods,
+  emptyLabel,
+  pending = false,
+  favoriteIds,
+  onOpen,
+  onToggleFavorite,
+}: {
+  foods: FoodItem[];
+  emptyLabel: string;
+  pending?: boolean;
+  favoriteIds: Set<number>;
+  onOpen: (food: FoodItem) => void;
+  onToggleFavorite: (food: FoodItem) => void;
+}) {
+  if (foods.length === 0 && !pending) {
+    return (
+      <ul className="overflow-hidden rounded-2xl bg-[color:var(--surface)] ring-1 ring-[color:var(--line)]/80">
+        <li className="px-4 py-10 text-center text-sm text-[color:var(--quiet)]">
+          {emptyLabel}
+        </li>
+      </ul>
+    );
+  }
+
+  return (
+    <ul className="overflow-hidden rounded-2xl bg-[color:var(--surface)] ring-1 ring-[color:var(--line)]/80">
+      {foods.map((food, idx) => {
+        const isFavorite = favoriteIds.has(food.fdcId);
+        return (
+          <li
+            key={food.fdcId}
+            className={cn(
+              "flex items-stretch",
+              idx > 0 && "border-t border-[color:var(--line)]/70",
+            )}
+          >
+            <button
+              type="button"
+              onClick={() => onOpen(food)}
+              className="flex min-w-0 flex-1 flex-col gap-0.5 px-4 py-3.5 text-left transition-colors active:bg-[color:var(--mist)] hover:bg-[color:var(--mist)]"
+            >
+              <span className="text-sm font-medium leading-snug text-[color:var(--ink)]">
+                {food.description}
+              </span>
+              <span className="text-xs text-[color:var(--quiet)]">
+                {Math.round(food.nutrientsPer100g.calories)} kcal / 100g
+                {food.dataType ? ` · ${food.dataType}` : ""}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onToggleFavorite(food)}
+              className="inline-flex w-12 shrink-0 items-center justify-center text-[color:var(--quiet)] transition-colors hover:bg-[color:var(--mist)] hover:text-[color:var(--brand)]"
+              aria-label={
+                isFavorite ? "Remove from favorites" : "Add to favorites"
+              }
+              aria-pressed={isFavorite}
+            >
+              <Star
+                className={cn(
+                  "size-4",
+                  isFavorite &&
+                    "fill-[color:var(--brand)] text-[color:var(--brand)]",
+                )}
+              />
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
