@@ -115,7 +115,7 @@ export function ProgressView() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={chartData}
-                margin={{ top: 8, right: 8, left: -12, bottom: 0 }}
+                margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
               >
                 <CartesianGrid
                   stroke="rgba(16,24,32,0.08)"
@@ -128,11 +128,14 @@ export function ProgressView() {
                   tickLine={false}
                 />
                 <YAxis
-                  domain={["auto", "auto"]}
+                  domain={["dataMin - 1", "dataMax + 1"]}
                   tick={{ fill: "#6b7785", fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
-                  width={36}
+                  width={42}
+                  tickFormatter={(v) =>
+                    typeof v === "number" ? v.toFixed(1) : String(v)
+                  }
                 />
                 <Tooltip
                   contentStyle={{
