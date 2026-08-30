@@ -11,6 +11,7 @@ const STORAGE_KEY = "platewise-data-v1";
 
 export function createDefaultData(): AppData {
   return {
+    displayName: "",
     recipes: [],
     diary: [],
     weights: [],
@@ -25,6 +26,8 @@ export function loadAppData(): AppData {
     if (!raw) return createDefaultData();
     const parsed = JSON.parse(raw) as Partial<AppData>;
     return {
+      displayName:
+        typeof parsed.displayName === "string" ? parsed.displayName : "",
       recipes: parsed.recipes ?? [],
       diary: parsed.diary ?? [],
       weights: parsed.weights ?? [],
@@ -76,6 +79,10 @@ export function deleteWeight(data: AppData, id: string): AppData {
 
 export function updateGoals(data: AppData, goals: Goals): AppData {
   return { ...data, goals };
+}
+
+export function updateDisplayName(data: AppData, displayName: string): AppData {
+  return { ...data, displayName: displayName.trim() };
 }
 
 export function todayISO(): string {
