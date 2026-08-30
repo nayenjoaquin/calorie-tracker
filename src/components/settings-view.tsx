@@ -107,7 +107,7 @@ function SettingsEditor({
         </div>
         <Button
           type="submit"
-          className="h-11 w-full rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
+          className="h-11 w-full gap-2 rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
         >
           {saved === "profile" ? (
             <>
@@ -154,7 +154,7 @@ function SettingsEditor({
         </div>
         <Button
           type="submit"
-          className="h-11 w-full rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
+          className="h-11 w-full gap-2 rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
         >
           {saved === "targets" ? (
             <>
