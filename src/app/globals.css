@@ -145,6 +145,51 @@
   }
 }
 
+@keyframes day-from-right {
+  from {
+    opacity: 0.35;
+    transform: translateX(32%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes day-from-left {
+  from {
+    opacity: 0.35;
+    transform: translateX(-32%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes day-fade {
+  from {
+    opacity: 0.5;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-day-from-right {
+  animation: day-from-right 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-day-from-left {
+  animation: day-from-left 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-day-fade {
+  animation: day-fade 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 .animate-rise {
   animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
