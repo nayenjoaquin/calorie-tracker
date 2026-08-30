@@ -33,12 +33,32 @@ type SearchPayload = {
 
 const MEALS: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
+function isMealType(value: string | undefined | null): value is MealType {
+  return (
+    value === "breakfast" ||
+    value === "lunch" ||
+    value === "dinner" ||
+    value === "snack"
+  );
+}
+
+function isISODate(value: string | undefined | null): value is string {
+  if (!value) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(`${value}T12:00:00`);
+  return !Number.isNaN(d.getTime());
+}
+
 export function FoodSearch({
   mode = "log",
   onPick,
+  initialMeal,
+  initialDate,
 }: {
   mode?: "log" | "pick";
   onPick?: (food: FoodItem) => void;
+  initialMeal?: string | null;
+  initialDate?: string | null;
 }) {
   const { logEntry } = useStore();
   const [query, setQuery] = useState("");
@@ -48,8 +68,15 @@ export function FoodSearch({
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<FoodItem | null>(null);
   const [grams, setGrams] = useState("100");
-  const [meal, setMeal] = useState<MealType>("lunch");
+  const [meal, setMeal] = useState<MealType>(
+    isMealType(initialMeal) ? initialMeal : "lunch",
+  );
+  const logDate = isISODate(initialDate) ? initialDate : todayISO();
   const [detailLoading, setDetailLoading] = useState(false);
+
+  useEffect(() => {
+    if (isMealType(initialMeal)) setMeal(initialMeal);
+  }, [initialMeal]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query.trim()), 350);
@@ -102,7 +129,7 @@ export function FoodSearch({
     if (!Number.isFinite(g) || g <= 0) return;
     logEntry({
       id: newId(),
-      date: todayISO(),
+      date: logDate,
       meal,
       name: selected.description,
       source: "food",
