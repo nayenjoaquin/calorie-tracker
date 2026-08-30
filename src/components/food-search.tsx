@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 type SearchPayload = {
   foods: FoodItem[];
@@ -118,19 +119,19 @@ export function FoodSearch({
       : null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[color:var(--quiet)]" />
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[color:var(--quiet)]" />
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search USDA foods — chicken, oats, banana…"
-          className="h-11 border-[color:var(--line)] bg-[color:var(--surface)] pl-10"
+          placeholder="Search foods…"
+          className="h-12 rounded-2xl border-[color:var(--line)] bg-[color:var(--surface)] pl-11 text-base shadow-sm"
           aria-label="Search foods"
         />
       </div>
 
-      <div className="flex min-h-5 items-center gap-2 text-xs text-[color:var(--quiet)]">
+      <div className="flex min-h-5 items-center gap-2 px-1 text-xs text-[color:var(--quiet)]">
         {pending && (
           <>
             <Loader2 className="size-3.5 animate-spin" /> Searching…
@@ -145,27 +146,30 @@ export function FoodSearch({
         {error && <span className="text-destructive">{error}</span>}
       </div>
 
-      <ul className="divide-y divide-[color:var(--line)]/70 overflow-hidden rounded-xl border border-[color:var(--line)] bg-[color:var(--surface)]">
+      <ul className="overflow-hidden rounded-2xl bg-[color:var(--surface)] ring-1 ring-[color:var(--line)]/80">
         {(result?.foods ?? []).length === 0 && !pending ? (
-          <li className="px-4 py-8 text-center text-sm text-[color:var(--quiet)]">
+          <li className="px-4 py-10 text-center text-sm text-[color:var(--quiet)]">
             No foods yet. Try another search.
           </li>
         ) : (
-          (result?.foods ?? []).map((food) => (
-            <li key={food.fdcId}>
+          (result?.foods ?? []).map((food, idx) => (
+            <li
+              key={food.fdcId}
+              className={cn(
+                idx > 0 && "border-t border-[color:var(--line)]/70",
+              )}
+            >
               <button
                 type="button"
                 onClick={() => openFood(food)}
-                className="flex w-full flex-col gap-1 px-4 py-3 text-left transition-colors hover:bg-[color:var(--mist)]"
+                className="flex w-full flex-col gap-0.5 px-4 py-3.5 text-left transition-colors active:bg-[color:var(--mist)] hover:bg-[color:var(--mist)]"
               >
-                <span className="text-sm font-medium text-[color:var(--ink)]">
+                <span className="text-sm font-medium leading-snug text-[color:var(--ink)]">
                   {food.description}
                 </span>
                 <span className="text-xs text-[color:var(--quiet)]">
-                  {food.dataType}
-                  {food.brandOwner ? ` · ${food.brandOwner}` : ""}
-                  {" · "}
                   {Math.round(food.nutrientsPer100g.calories)} kcal / 100g
+                  {food.dataType ? ` · ${food.dataType}` : ""}
                 </span>
               </button>
             </li>
@@ -174,9 +178,9 @@ export function FoodSearch({
       </ul>
 
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-lg">
+        <DialogContent className="max-h-[90dvh] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-3xl border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-[family-name:var(--font-display)] text-2xl leading-snug">
+            <DialogTitle className="font-[family-name:var(--font-display)] text-xl font-semibold leading-snug">
               {selected?.description}
             </DialogTitle>
           </DialogHeader>
@@ -195,15 +199,18 @@ export function FoodSearch({
                     min={1}
                     value={grams}
                     onChange={(e) => setGrams(e.target.value)}
+                    className="h-11 rounded-xl"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Meal</Label>
                   <Select
                     value={meal}
-                    onValueChange={(v) => setMeal(v as MealType)}
+                    onValueChange={(v) => {
+                      if (v) setMeal(v as MealType);
+                    }}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-11 w-full rounded-xl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -221,7 +228,7 @@ export function FoodSearch({
               )}
               <Button
                 onClick={confirmLog}
-                className="w-full bg-[color:var(--forest)] text-white hover:bg-[color:var(--forest-deep)]"
+                className="h-12 w-full rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
               >
                 Add to diary
               </Button>

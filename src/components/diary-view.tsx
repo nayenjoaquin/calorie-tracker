@@ -2,9 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Settings2, Trash2 } from "lucide-react";
 import { useStore } from "@/components/store-provider";
-import { MacroStrip, NutrientPanel } from "@/components/nutrient-panel";
+import {
+  CalorieHero,
+  MacroStrip,
+  NutrientPanel,
+} from "@/components/nutrient-panel";
 import {
   multiplyNutrients,
   recipeNutrientsPerServing,
@@ -97,59 +101,65 @@ export function DiaryView() {
   }
 
   return (
-    <div className="space-y-8">
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="space-y-6">
+      <section className="animate-rise space-y-4">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--quiet)]">
-              Today&apos;s plate
-            </p>
-            <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-tight text-[color:var(--ink)] sm:text-5xl">
-              Platewise
+            <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[color:var(--ink)]">
+              Diary
             </h1>
-            <p className="mt-2 max-w-md text-sm text-[color:var(--ink-soft)]">
-              Log meals from USDA foods or your recipes. Macros and micros stay
-              on this device.
+            <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
+              Log food, hit your macros.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-auto border-[color:var(--line)] bg-[color:var(--surface)]"
+              className="h-10 w-[9.5rem] rounded-full border-[color:var(--line)] bg-[color:var(--surface)] px-3 text-xs"
+              aria-label="Diary date"
             />
             <Button
+              size="icon"
               variant="outline"
               onClick={() => {
                 setGoalDraft(data.goals);
                 setGoalsOpen(true);
               }}
-              className="border-[color:var(--line)]"
+              className="size-10 rounded-full border-[color:var(--line)]"
+              aria-label="Edit goals"
             >
-              Goals
+              <Settings2 className="size-4" />
             </Button>
           </div>
         </div>
 
-        <div className="animate-rise rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)]/90 p-5 shadow-[0_20px_50px_-40px_rgba(30,55,40,0.45)]">
-          <MacroStrip nutrients={totals} goals={data.goals} />
+        <div className="rounded-[1.5rem] bg-[color:var(--surface)]/90 p-5 shadow-[0_18px_40px_-28px_rgba(16,24,32,0.35)] ring-1 ring-[color:var(--line)]/70">
+          <CalorieHero calories={totals.calories} goal={data.goals.calories} />
+          <div className="mt-5 border-t border-[color:var(--line)]/80 pt-4">
+            <MacroStrip
+              nutrients={totals}
+              goals={data.goals}
+              hideCalories
+            />
+          </div>
         </div>
       </section>
 
-      <section className="flex flex-wrap gap-2">
+      <section className="animate-rise-delay flex gap-2">
         <Link
           href="/foods"
           className={cn(
             buttonVariants({ variant: "default" }),
-            "bg-[color:var(--forest)] text-white hover:bg-[color:var(--forest-deep)]",
+            "h-11 flex-1 rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]",
           )}
         >
           <Plus className="size-4" /> Add food
         </Link>
         <Button
           variant="outline"
-          className="border-[color:var(--line)]"
+          className="h-11 rounded-full border-[color:var(--line)] px-4"
           onClick={() => {
             setSelectedRecipe(data.recipes[0]?.id ?? null);
             setServings("1");
@@ -157,50 +167,56 @@ export function DiaryView() {
           }}
           disabled={data.recipes.length === 0}
         >
-          Log recipe
+          Recipe
         </Button>
-        {data.recipes.length === 0 && (
-          <Link
-            href="/recipes"
-            className={cn(buttonVariants({ variant: "ghost" }))}
-          >
-            Create a recipe first
-          </Link>
-        )}
       </section>
 
-      <section className="space-y-6">
+      <section className="animate-rise-delay-2 space-y-5">
         {MEALS.map((m) => (
           <div key={m} className="space-y-2">
-            <h2 className="font-[family-name:var(--font-display)] text-xl capitalize text-[color:var(--ink)]">
-              {m}
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-[family-name:var(--font-display)] text-base font-semibold capitalize text-[color:var(--ink)]">
+                {m}
+              </h2>
+              <span className="text-xs tabular-nums text-[color:var(--quiet)]">
+                {Math.round(
+                  byMeal[m].reduce((a, e) => a + e.nutrients.calories, 0),
+                )}{" "}
+                kcal
+              </span>
+            </div>
             {byMeal[m].length === 0 ? (
-              <p className="text-sm text-[color:var(--quiet)]">Nothing logged.</p>
+              <p className="rounded-2xl bg-[color:var(--mist)]/70 px-4 py-3 text-sm text-[color:var(--quiet)]">
+                Nothing logged
+              </p>
             ) : (
-              <ul className="divide-y divide-[color:var(--line)]/70 overflow-hidden rounded-xl border border-[color:var(--line)] bg-[color:var(--surface)]">
-                {byMeal[m].map((entry) => (
+              <ul className="overflow-hidden rounded-2xl bg-[color:var(--surface)] ring-1 ring-[color:var(--line)]/80">
+                {byMeal[m].map((entry, idx) => (
                   <li
                     key={entry.id}
-                    className="flex items-start justify-between gap-3 px-4 py-3"
+                    className={cn(
+                      "flex items-start justify-between gap-3 px-4 py-3",
+                      idx > 0 && "border-t border-[color:var(--line)]/70",
+                    )}
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-[color:var(--ink)]">
                         {entry.name}
                       </p>
-                      <p className="text-xs text-[color:var(--quiet)]">
+                      <p className="mt-0.5 text-xs text-[color:var(--quiet)]">
                         {entry.source === "recipe"
                           ? "Recipe"
                           : `${entry.grams}g`}{" "}
                         · {Math.round(entry.nutrients.calories)} kcal · P{" "}
-                        {entry.nutrients.protein}g · C {entry.nutrients.carbs}g ·
-                        F {entry.nutrients.fat}g
+                        {entry.nutrients.protein} · C {entry.nutrients.carbs} ·
+                        F {entry.nutrients.fat}
                       </p>
                     </div>
                     <Button
                       size="icon-sm"
                       variant="ghost"
                       aria-label="Remove entry"
+                      className="touch-target shrink-0"
                       onClick={() => removeEntry(entry.id)}
                     >
                       <Trash2 className="size-4 text-[color:var(--quiet)]" />
@@ -214,15 +230,15 @@ export function DiaryView() {
       </section>
 
       {dayEntries.length > 0 && (
-        <section className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)]/90 p-5">
+        <section className="rounded-[1.25rem] bg-[color:var(--surface)]/90 p-4 ring-1 ring-[color:var(--line)]/70">
           <NutrientPanel nutrients={totals} perLabel="day total" />
         </section>
       )}
 
       <Dialog open={recipeOpen} onOpenChange={setRecipeOpen}>
-        <DialogContent className="border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-md">
+        <DialogContent className="max-w-[calc(100%-1.5rem)] rounded-3xl border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-[family-name:var(--font-display)] text-2xl">
+            <DialogTitle className="font-[family-name:var(--font-display)] text-xl font-semibold">
               Log a recipe
             </DialogTitle>
           </DialogHeader>
@@ -233,7 +249,7 @@ export function DiaryView() {
                 value={selectedRecipe}
                 onValueChange={(v) => setSelectedRecipe(v)}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="h-11 w-full rounded-xl">
                   <SelectValue placeholder="Choose recipe" />
                 </SelectTrigger>
                 <SelectContent>
@@ -255,6 +271,7 @@ export function DiaryView() {
                   step={0.25}
                   value={servings}
                   onChange={(e) => setServings(e.target.value)}
+                  className="h-11 rounded-xl"
                 />
               </div>
               <div className="space-y-1.5">
@@ -265,7 +282,7 @@ export function DiaryView() {
                     if (v) setMeal(v as MealType);
                   }}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-11 w-full rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -279,7 +296,7 @@ export function DiaryView() {
               </div>
             </div>
             <Button
-              className="w-full bg-[color:var(--forest)] text-white hover:bg-[color:var(--forest-deep)]"
+              className="h-11 w-full rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
               onClick={logRecipe}
               disabled={!selectedRecipe}
             >
@@ -290,9 +307,9 @@ export function DiaryView() {
       </Dialog>
 
       <Dialog open={goalsOpen} onOpenChange={setGoalsOpen}>
-        <DialogContent className="border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-md">
+        <DialogContent className="max-w-[calc(100%-1.5rem)] rounded-3xl border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-[family-name:var(--font-display)] text-2xl">
+            <DialogTitle className="font-[family-name:var(--font-display)] text-xl font-semibold">
               Daily goals
             </DialogTitle>
           </DialogHeader>
@@ -311,6 +328,7 @@ export function DiaryView() {
                 <Input
                   id={key}
                   type="number"
+                  className="h-11 rounded-xl"
                   value={goalDraft[key]}
                   onChange={(e) =>
                     setGoalDraft((g) => ({
@@ -323,7 +341,7 @@ export function DiaryView() {
             ))}
           </div>
           <Button
-            className="w-full bg-[color:var(--forest)] text-white hover:bg-[color:var(--forest-deep)]"
+            className="h-11 w-full rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
             onClick={() => {
               setGoals(goalDraft);
               setGoalsOpen(false);

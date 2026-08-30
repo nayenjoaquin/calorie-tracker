@@ -72,68 +72,74 @@ export function ProgressView() {
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--quiet)]">
-          Body check-in
-        </p>
-        <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-tight text-[color:var(--ink)] sm:text-5xl">
+    <div className="space-y-6">
+      <div className="animate-rise">
+        <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[color:var(--ink)]">
           Progress
         </h1>
-        <p className="mt-2 max-w-md text-sm text-[color:var(--ink-soft)]">
-          Track weight on this device. One entry per day — logging again updates
-          that day.
+        <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
+          Weigh-ins stay on this device.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="animate-rise-delay grid grid-cols-3 gap-2">
         <Stat
           label="Latest"
-          value={latest ? `${latest.weightKg} kg` : "—"}
-          hint={latest?.date ?? "No weigh-ins yet"}
+          value={latest ? `${latest.weightKg}` : "—"}
+          unit={latest ? "kg" : undefined}
+          hint={latest?.date ?? "None yet"}
         />
         <Stat
           label="Target"
-          value={`${data.goals.weightKg} kg`}
-          hint="From your goals"
+          value={`${data.goals.weightKg}`}
+          unit="kg"
+          hint="Goal"
         />
         <Stat
-          label="vs target"
-          value={delta == null ? "—" : `${delta > 0 ? "+" : ""}${delta} kg`}
-          hint={delta == null ? "Log a weigh-in" : "Difference from goal"}
+          label="Delta"
+          value={delta == null ? "—" : `${delta > 0 ? "+" : ""}${delta}`}
+          unit={delta == null ? undefined : "kg"}
+          hint="vs target"
         />
       </div>
 
-      <section className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)]/90 p-4 sm:p-5">
+      <section className="animate-rise-delay-2 rounded-[1.25rem] bg-[color:var(--surface)] p-3 ring-1 ring-[color:var(--line)]/80 sm:p-4">
         {chartData.length < 2 ? (
-          <div className="flex h-52 items-center justify-center text-sm text-[color:var(--quiet)]">
+          <div className="flex h-44 items-center justify-center px-4 text-center text-sm text-[color:var(--quiet)]">
             {chartData.length === 0
-              ? "Log at least two weigh-ins to see a trend."
-              : "One point logged — add another day to chart the trend."}
+              ? "Log two weigh-ins to see your trend."
+              : "One point logged — add another day."}
           </div>
         ) : (
-          <div className="h-64 w-full animate-rise">
+          <div className="h-52 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="rgba(46,70,52,0.12)" strokeDasharray="4 4" />
+              <LineChart
+                data={chartData}
+                margin={{ top: 8, right: 8, left: -12, bottom: 0 }}
+              >
+                <CartesianGrid
+                  stroke="rgba(16,24,32,0.08)"
+                  strokeDasharray="4 4"
+                />
                 <XAxis
                   dataKey="date"
-                  tick={{ fill: "#5d6b61", fontSize: 12 }}
+                  tick={{ fill: "#6b7785", fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
                   domain={["auto", "auto"]}
-                  tick={{ fill: "#5d6b61", fontSize: 12 }}
+                  tick={{ fill: "#6b7785", fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
-                  width={40}
+                  width={36}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "#f7f4ee",
-                    border: "1px solid #d7d0c4",
-                    borderRadius: 8,
+                    background: "#ffffff",
+                    border: "1px solid #e4e9ef",
+                    borderRadius: 12,
+                    fontSize: 12,
                   }}
                   formatter={(value) => [`${value} kg`, "Weight"]}
                   labelFormatter={(_, payload) =>
@@ -143,9 +149,9 @@ export function ProgressView() {
                 <Line
                   type="monotone"
                   dataKey="kg"
-                  stroke="#2f6a45"
+                  stroke="#0f9d8a"
                   strokeWidth={2.5}
-                  dot={{ r: 3, fill: "#2f6a45" }}
+                  dot={{ r: 3.5, fill: "#0f9d8a", strokeWidth: 0 }}
                   activeDot={{ r: 5 }}
                 />
               </LineChart>
@@ -156,32 +162,36 @@ export function ProgressView() {
 
       <form
         onSubmit={submit}
-        className="space-y-4 rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)]/90 p-4 sm:p-5"
+        className="space-y-4 rounded-[1.25rem] bg-[color:var(--surface)] p-4 ring-1 ring-[color:var(--line)]/80"
       >
-        <h2 className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--ink)]">
+        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[color:var(--ink)]">
           Log weight
         </h2>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="w-date">Date</Label>
-            <Input
-              id="w-date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="w-kg">Weight (kg)</Label>
-            <Input
-              id="w-kg"
-              type="number"
-              step="0.1"
-              min="1"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              placeholder="74.2"
-            />
+        <div className="grid gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="w-date">Date</Label>
+              <Input
+                id="w-date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="h-11 rounded-xl"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="w-kg">Weight (kg)</Label>
+              <Input
+                id="w-kg"
+                type="number"
+                step="0.1"
+                min="1"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                placeholder="74.2"
+                className="h-11 rounded-xl"
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="w-note">Note</Label>
@@ -190,35 +200,38 @@ export function ProgressView() {
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Optional"
+              className="h-11 rounded-xl"
             />
           </div>
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <Button
           type="submit"
-          className="bg-[color:var(--forest)] text-white hover:bg-[color:var(--forest-deep)]"
+          className="h-12 w-full rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
         >
           Save weigh-in
         </Button>
       </form>
 
       <section className="space-y-2">
-        <h2 className="font-[family-name:var(--font-display)] text-xl text-[color:var(--ink)]">
+        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[color:var(--ink)]">
           History
         </h2>
         {data.weights.length === 0 ? (
           <p className="text-sm text-[color:var(--quiet)]">No weigh-ins yet.</p>
         ) : (
-          <ul className="divide-y divide-[color:var(--line)]/70 overflow-hidden rounded-xl border border-[color:var(--line)] bg-[color:var(--surface)]">
+          <ul className="overflow-hidden rounded-2xl bg-[color:var(--surface)] ring-1 ring-[color:var(--line)]/80">
             {[...data.weights]
               .sort((a, b) => b.date.localeCompare(a.date))
-              .map((w) => (
+              .map((w, idx) => (
                 <li
                   key={w.id}
-                  className="flex items-center justify-between gap-3 px-4 py-3"
+                  className={`flex items-center justify-between gap-3 px-4 py-3 ${
+                    idx > 0 ? "border-t border-[color:var(--line)]/70" : ""
+                  }`}
                 >
                   <div>
-                    <p className="text-sm font-medium text-[color:var(--ink)]">
+                    <p className="text-sm font-semibold tabular-nums text-[color:var(--ink)]">
                       {w.weightKg} kg
                     </p>
                     <p className="text-xs text-[color:var(--quiet)]">
@@ -246,21 +259,30 @@ export function ProgressView() {
 function Stat({
   label,
   value,
+  unit,
   hint,
 }: {
   label: string;
   value: string;
+  unit?: string;
   hint: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)]/90 p-4">
-      <p className="text-xs uppercase tracking-wider text-[color:var(--quiet)]">
+    <div className="rounded-[1.1rem] bg-[color:var(--surface)] p-3 ring-1 ring-[color:var(--line)]/80">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-[color:var(--quiet)]">
         {label}
       </p>
-      <p className="mt-1 font-[family-name:var(--font-display)] text-3xl text-[color:var(--ink)]">
+      <p className="mt-1 font-[family-name:var(--font-display)] text-xl font-semibold tabular-nums text-[color:var(--ink)]">
         {value}
+        {unit ? (
+          <span className="ml-0.5 text-xs font-sans font-medium text-[color:var(--quiet)]">
+            {unit}
+          </span>
+        ) : null}
       </p>
-      <p className="mt-1 text-xs text-[color:var(--quiet)]">{hint}</p>
+      <p className="mt-0.5 truncate text-[11px] text-[color:var(--quiet)]">
+        {hint}
+      </p>
     </div>
   );
 }

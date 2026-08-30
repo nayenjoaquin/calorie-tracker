@@ -28,6 +28,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 type Draft = {
   id?: string;
@@ -132,65 +133,53 @@ export function RecipesView() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="space-y-6">
+      <div className="animate-rise flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--quiet)]">
-            Your kitchen
-          </p>
-          <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-tight text-[color:var(--ink)] sm:text-5xl">
+          <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[color:var(--ink)]">
             Recipes
           </h1>
-          <p className="mt-2 max-w-md text-sm text-[color:var(--ink-soft)]">
-            Build meals from USDA foods. Nutrition rolls up per serving
-            automatically.
+          <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
+            Build meals from USDA foods.
           </p>
         </div>
         <Button
           onClick={openCreate}
-          className="bg-[color:var(--forest)] text-white hover:bg-[color:var(--forest-deep)]"
+          className="h-11 shrink-0 rounded-full bg-[color:var(--brand)] px-4 text-white hover:bg-[color:var(--brand-deep)]"
         >
-          <Plus className="size-4" /> New recipe
+          <Plus className="size-4" /> New
         </Button>
       </div>
 
       {data.recipes.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[color:var(--line)] bg-[color:var(--surface)]/60 px-6 py-14 text-center">
-          <p className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--ink)]">
+        <div className="animate-rise-delay rounded-[1.5rem] bg-[color:var(--mist)]/80 px-5 py-12 text-center">
+          <p className="font-[family-name:var(--font-display)] text-xl font-semibold text-[color:var(--ink)]">
             No recipes yet
           </p>
           <p className="mt-2 text-sm text-[color:var(--quiet)]">
-            Create one from searched USDA foods to log later in your diary.
+            Create one from searched foods to log later.
           </p>
         </div>
       ) : (
-        <ul className="space-y-3">
+        <ul className="animate-rise-delay space-y-3">
           {data.recipes.map((recipe) => {
             const per = recipeNutrientsPerServing(recipe);
             return (
               <li
                 key={recipe.id}
-                className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)]/90 p-4 sm:p-5"
+                className="rounded-[1.25rem] bg-[color:var(--surface)] p-4 ring-1 ring-[color:var(--line)]/80"
               >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h2 className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--ink)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[color:var(--ink)]">
                       {recipe.name}
                     </h2>
-                    <p className="mt-1 text-xs text-[color:var(--quiet)]">
-                      {recipe.ingredients.length} ingredient
-                      {recipe.ingredients.length === 1 ? "" : "s"} ·{" "}
-                      {recipe.servings} serving
-                      {recipe.servings === 1 ? "" : "s"} ·{" "}
-                      {Math.round(per.calories)} kcal / serving
+                    <p className="mt-0.5 text-xs text-[color:var(--quiet)]">
+                      {recipe.ingredients.length} ingredients · {recipe.servings}{" "}
+                      servings · {Math.round(per.calories)} kcal
                     </p>
-                    {recipe.notes && (
-                      <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
-                        {recipe.notes}
-                      </p>
-                    )}
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex shrink-0 gap-0.5">
                     <Button
                       size="icon-sm"
                       variant="ghost"
@@ -209,19 +198,22 @@ export function RecipesView() {
                     </Button>
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs sm:max-w-sm">
-                  <div className="rounded-lg bg-[color:var(--mist)] px-2 py-2">
-                    <div className="text-[color:var(--quiet)]">Protein</div>
-                    <div className="font-medium">{per.protein}g</div>
-                  </div>
-                  <div className="rounded-lg bg-[color:var(--mist)] px-2 py-2">
-                    <div className="text-[color:var(--quiet)]">Carbs</div>
-                    <div className="font-medium">{per.carbs}g</div>
-                  </div>
-                  <div className="rounded-lg bg-[color:var(--mist)] px-2 py-2">
-                    <div className="text-[color:var(--quiet)]">Fat</div>
-                    <div className="font-medium">{per.fat}g</div>
-                  </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+                  {[
+                    ["Protein", `${per.protein}g`],
+                    ["Carbs", `${per.carbs}g`],
+                    ["Fat", `${per.fat}g`],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      className="rounded-xl bg-[color:var(--mist)] px-2 py-2"
+                    >
+                      <div className="text-[color:var(--quiet)]">{label}</div>
+                      <div className="mt-0.5 font-semibold tabular-nums">
+                        {value}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </li>
             );
@@ -230,9 +222,9 @@ export function RecipesView() {
       )}
 
       <Dialog open={!!draft} onOpenChange={(o) => !o && setDraft(null)}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-xl">
+        <DialogContent className="max-h-[92dvh] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-3xl border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle className="font-[family-name:var(--font-display)] text-2xl">
+            <DialogTitle className="font-[family-name:var(--font-display)] text-xl font-semibold">
               {draft?.id ? "Edit recipe" : "New recipe"}
             </DialogTitle>
           </DialogHeader>
@@ -247,6 +239,7 @@ export function RecipesView() {
                     setDraft({ ...draft, name: e.target.value })
                   }
                   placeholder="Overnight oats"
+                  className="h-11 rounded-xl"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -260,16 +253,17 @@ export function RecipesView() {
                     onChange={(e) =>
                       setDraft({ ...draft, servings: e.target.value })
                     }
+                    className="h-11 rounded-xl"
                   />
                 </div>
                 <div className="flex items-end">
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full border-[color:var(--line)]"
+                    className="h-11 w-full rounded-full border-[color:var(--line)]"
                     onClick={() => setPickOpen(true)}
                   >
-                    <Plus className="size-4" /> Add ingredient
+                    <Plus className="size-4" /> Ingredient
                   </Button>
                 </div>
               </div>
@@ -283,6 +277,7 @@ export function RecipesView() {
                   }
                   placeholder="Optional prep notes"
                   rows={2}
+                  className="rounded-xl"
                 />
               </div>
 
@@ -291,11 +286,14 @@ export function RecipesView() {
                   Add at least one USDA food ingredient.
                 </p>
               ) : (
-                <ul className="divide-y divide-[color:var(--line)]/70 rounded-xl border border-[color:var(--line)]">
-                  {draft.ingredients.map((ing) => (
+                <ul className="overflow-hidden rounded-2xl ring-1 ring-[color:var(--line)]/80">
+                  {draft.ingredients.map((ing, idx) => (
                     <li
                       key={ing.id}
-                      className="flex items-center justify-between gap-2 px-3 py-2"
+                      className={cn(
+                        "flex items-center justify-between gap-2 px-3 py-2.5",
+                        idx > 0 && "border-t border-[color:var(--line)]/70",
+                      )}
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm">{ing.food.description}</p>
@@ -306,7 +304,7 @@ export function RecipesView() {
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
-                          className="h-8 w-20"
+                          className="h-9 w-20 rounded-lg"
                           value={ing.grams}
                           onChange={(e) => {
                             const grams = Number(e.target.value);
@@ -314,7 +312,12 @@ export function RecipesView() {
                               ...draft,
                               ingredients: draft.ingredients.map((i) =>
                                 i.id === ing.id
-                                  ? { ...i, grams: Number.isFinite(grams) ? grams : i.grams }
+                                  ? {
+                                      ...i,
+                                      grams: Number.isFinite(grams)
+                                        ? grams
+                                        : i.grams,
+                                    }
                                   : i,
                               ),
                             });
@@ -349,7 +352,7 @@ export function RecipesView() {
               )}
 
               <Button
-                className="w-full bg-[color:var(--forest)] text-white hover:bg-[color:var(--forest-deep)]"
+                className="h-12 w-full rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
                 onClick={save}
                 disabled={
                   !draft.name.trim() ||
@@ -367,11 +370,11 @@ export function RecipesView() {
       <Sheet open={pickOpen} onOpenChange={setPickOpen}>
         <SheetContent className="w-full overflow-y-auto border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-md">
           <SheetHeader>
-            <SheetTitle className="font-[family-name:var(--font-display)] text-2xl">
+            <SheetTitle className="font-[family-name:var(--font-display)] text-xl font-semibold">
               Add ingredient
             </SheetTitle>
           </SheetHeader>
-          <div className="mt-4 px-1">
+          <div className="mt-4 px-1 pb-8">
             <FoodSearch mode="pick" onPick={addIngredient} />
           </div>
         </SheetContent>
@@ -381,9 +384,9 @@ export function RecipesView() {
         open={!!pendingFood}
         onOpenChange={(o) => !o && setPendingFood(null)}
       >
-        <DialogContent className="border-[color:var(--line)] bg-[color:var(--surface)]">
+        <DialogContent className="max-w-[calc(100%-1.5rem)] rounded-3xl border-[color:var(--line)] bg-[color:var(--surface)]">
           <DialogHeader>
-            <DialogTitle className="font-[family-name:var(--font-display)] text-xl leading-snug">
+            <DialogTitle className="font-[family-name:var(--font-display)] text-lg font-semibold leading-snug">
               {pendingFood?.description}
             </DialogTitle>
           </DialogHeader>
@@ -396,10 +399,11 @@ export function RecipesView() {
                 min={1}
                 value={pendingGrams}
                 onChange={(e) => setPendingGrams(e.target.value)}
+                className="h-11 rounded-xl"
               />
             </div>
             <Button
-              className="w-full bg-[color:var(--forest)] text-white hover:bg-[color:var(--forest-deep)]"
+              className="h-12 w-full rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
               onClick={confirmIngredient}
             >
               Add to recipe
