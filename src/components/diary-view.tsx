@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, Settings2, Trash2 } from "lucide-react";
+import { BookmarkPlus, MoreVertical, Plus, Settings2, Trash2 } from "lucide-react";
 import { useStore } from "@/components/store-provider";
 import {
   CalorieHero,
@@ -11,12 +11,13 @@ import {
 } from "@/components/nutrient-panel";
 import { WeekDayBar, useDaySwipe, useAnimatedDate, DaySlide } from "@/components/week-day-bar";
 import {
+  mealEntriesToIngredients,
   multiplyNutrients,
   recipeNutrientsPerServing,
 } from "@/lib/recipes";
 import { addNutrients } from "@/lib/nutrients";
 import { newId, todayISO } from "@/lib/storage";
-import type { MealType } from "@/lib/types";
+import type { MealType, Recipe } from "@/lib/types";
 import { EMPTY_NUTRIENTS } from "@/lib/types";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -38,14 +45,21 @@ import {
 
 const MEALS: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
+function mealTitle(meal: MealType): string {
+  return meal.charAt(0).toUpperCase() + meal.slice(1);
+}
+
 export function DiaryView() {
-  const { data, ready, removeEntry, logEntry } = useStore();
+  const { data, ready, removeEntry, logEntry, saveRecipe } = useStore();
   const { date, setDate, dir, dragX, setDragX, animKey } =
     useAnimatedDate(todayISO());
   const [recipeOpen, setRecipeOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<string | null>(null);
   const [servings, setServings] = useState("1");
   const [meal, setMeal] = useState<MealType>("lunch");
+  const [saveMeal, setSaveMeal] = useState<MealType | null>(null);
+  const [saveName, setSaveName] = useState("");
+  const [saveServings, setSaveServings] = useState("1");
   const daySwipe = useDaySwipe(date, setDate, setDragX);
 
   const markedDates = useMemo(
@@ -88,6 +102,13 @@ export function DiaryView() {
     });
   }, [date]);
 
+  const knownFoods = useMemo(() => {
+    const fromRecipes = data.recipes.flatMap((r) =>
+      r.ingredients.map((i) => i.food),
+    );
+    return [...data.recentFoods, ...data.favoriteFoods, ...fromRecipes];
+  }, [data.recentFoods, data.favoriteFoods, data.recipes]);
+
   function logRecipe() {
     const recipe = data.recipes.find((r) => r.id === selectedRecipe);
     if (!recipe) return;
@@ -107,6 +128,43 @@ export function DiaryView() {
       nutrients: multiplyNutrients(perServing, s),
     });
     setRecipeOpen(false);
+  }
+
+  function openSaveMeal(m: MealType) {
+    const entries = byMeal[m];
+    if (entries.length === 0) return;
+    setSaveMeal(m);
+    setSaveName(mealTitle(m));
+    setSaveServings("1");
+  }
+
+  function confirmSaveMeal() {
+    if (!saveMeal) return;
+    const entries = byMeal[saveMeal];
+    if (entries.length === 0) return;
+    const name = saveName.trim();
+    const s = Number(saveServings);
+    if (!name || !Number.isFinite(s) || s <= 0) return;
+
+    const ingredients = mealEntriesToIngredients(
+      entries,
+      data.recipes,
+      knownFoods,
+    );
+    if (ingredients.length === 0) return;
+
+    const now = new Date().toISOString();
+    const recipe: Recipe = {
+      id: newId(),
+      name,
+      servings: s,
+      notes: `Saved from ${mealTitle(saveMeal).toLowerCase()} on ${date}`,
+      ingredients,
+      createdAt: now,
+      updatedAt: now,
+    };
+    saveRecipe(recipe);
+    setSaveMeal(null);
   }
 
   if (!ready) {
@@ -195,9 +253,38 @@ export function DiaryView() {
                     <h2 className="font-[family-name:var(--font-display)] text-base font-semibold capitalize text-[color:var(--ink)]">
                       {m}
                     </h2>
-                    <span className="text-xs tabular-nums text-[color:var(--quiet)]">
-                      {mealKcal} kcal
-                    </span>
+                    <div className="flex items-center gap-0.5">
+                      <span className="pr-1 text-xs tabular-nums text-[color:var(--quiet)]">
+                        {mealKcal} kcal
+                      </span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              aria-label={`${mealTitle(m)} options`}
+                              className="touch-target shrink-0 text-[color:var(--quiet)]"
+                            />
+                          }
+                        >
+                          <MoreVertical className="size-4" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="min-w-44 rounded-xl border-[color:var(--line)] bg-[color:var(--surface)] p-1 shadow-lg"
+                        >
+                          <DropdownMenuItem
+                            disabled={byMeal[m].length === 0}
+                            onClick={() => openSaveMeal(m)}
+                            className="cursor-pointer gap-2 rounded-lg px-2.5 py-2"
+                          >
+                            <BookmarkPlus className="size-4" />
+                            Save as recipe
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                   {byMeal[m].length === 0 ? (
                     <div className="flex items-center justify-between gap-3 rounded-2xl bg-[color:var(--mist)]/70 px-4 py-3">
@@ -326,7 +413,7 @@ export function DiaryView() {
                   <SelectContent>
                     {MEALS.map((m) => (
                       <SelectItem key={m} value={m}>
-                        {m.charAt(0).toUpperCase() + m.slice(1)}
+                        {mealTitle(m)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -339,6 +426,61 @@ export function DiaryView() {
               disabled={!selectedRecipe}
             >
               Add to diary
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={saveMeal != null}
+        onOpenChange={(open) => {
+          if (!open) setSaveMeal(null);
+        }}
+      >
+        <DialogContent className="max-w-[calc(100%-1.5rem)] rounded-3xl border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-[family-name:var(--font-display)] text-xl font-semibold">
+              Save as recipe
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-[color:var(--ink-soft)]">
+              {saveMeal
+                ? `Save all ${byMeal[saveMeal].length} item${byMeal[saveMeal].length === 1 ? "" : "s"} from ${mealTitle(saveMeal).toLowerCase()} as a recipe.`
+                : null}
+            </p>
+            <div className="space-y-1.5">
+              <Label htmlFor="save-recipe-name">Name</Label>
+              <Input
+                id="save-recipe-name"
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                placeholder="Recipe name"
+                className="h-11 rounded-xl"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="save-recipe-servings">Servings</Label>
+              <Input
+                id="save-recipe-servings"
+                type="number"
+                min={0.25}
+                step={0.25}
+                value={saveServings}
+                onChange={(e) => setSaveServings(e.target.value)}
+                className="h-11 rounded-xl"
+              />
+            </div>
+            <Button
+              className="h-11 w-full rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
+              onClick={confirmSaveMeal}
+              disabled={
+                !saveName.trim() ||
+                !Number.isFinite(Number(saveServings)) ||
+                Number(saveServings) <= 0
+              }
+            >
+              Save recipe
             </Button>
           </div>
         </DialogContent>
