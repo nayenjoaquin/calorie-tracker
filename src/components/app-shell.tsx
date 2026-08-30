@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, ChartLine, Leaf, UtensilsCrossed } from "lucide-react";
+import {
+  BookOpen,
+  ChartLine,
+  Leaf,
+  Settings2,
+  UtensilsCrossed,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -10,6 +16,7 @@ const NAV = [
   { href: "/foods", label: "Foods", icon: Leaf },
   { href: "/recipes", label: "Recipes", icon: BookOpen },
   { href: "/progress", label: "Progress", icon: ChartLine },
+  { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -65,7 +72,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--line)]/80 bg-[color:var(--surface)]/92 backdrop-blur-xl md:hidden"
         style={{ paddingBottom: "var(--safe-bottom)" }}
       >
-        <div className="mx-auto grid h-[var(--nav-h)] max-w-lg grid-cols-4">
+        <div className="mx-auto grid h-[var(--nav-h)] max-w-lg grid-cols-5">
           {NAV.map((item) => {
             const Icon = item.icon;
             const active =

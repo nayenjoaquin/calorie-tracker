@@ -39,15 +39,13 @@ import {
 const MEALS: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
 export function DiaryView() {
-  const { data, ready, removeEntry, logEntry, setGoals } = useStore();
+  const { data, ready, removeEntry, logEntry } = useStore();
   const { date, setDate, dir, dragX, setDragX, animKey } =
     useAnimatedDate(todayISO());
   const [recipeOpen, setRecipeOpen] = useState(false);
-  const [goalsOpen, setGoalsOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<string | null>(null);
   const [servings, setServings] = useState("1");
   const [meal, setMeal] = useState<MealType>("lunch");
-  const [goalDraft, setGoalDraft] = useState(data.goals);
   const daySwipe = useDaySwipe(date, setDate, setDragX);
 
   const markedDates = useMemo(
@@ -119,30 +117,30 @@ export function DiaryView() {
     );
   }
 
+  const greeting = data.displayName.trim();
+
   return (
     <div className="space-y-6" {...daySwipe}>
       <section className="space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[color:var(--ink)]">
-              Diary
+              {greeting ? `${greeting}'s diary` : "Diary"}
             </h1>
             <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
               {dayHeading}
             </p>
           </div>
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => {
-              setGoalDraft(data.goals);
-              setGoalsOpen(true);
-            }}
-            className="size-10 rounded-full border-[color:var(--line)]"
-            aria-label="Edit goals"
+          <Link
+            href="/settings"
+            className={cn(
+              buttonVariants({ size: "icon", variant: "outline" }),
+              "size-10 rounded-full border-[color:var(--line)]",
+            )}
+            aria-label="Open settings"
           >
             <Settings2 className="size-4" />
-          </Button>
+          </Link>
         </div>
 
         <WeekDayBar
@@ -343,52 +341,6 @@ export function DiaryView() {
               Add to diary
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={goalsOpen} onOpenChange={setGoalsOpen}>
-        <DialogContent className="max-w-[calc(100%-1.5rem)] rounded-3xl border-[color:var(--line)] bg-[color:var(--surface)] sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-[family-name:var(--font-display)] text-xl font-semibold">
-              Daily goals
-            </DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-3">
-            {(
-              [
-                ["calories", "Calories"],
-                ["protein", "Protein (g)"],
-                ["carbs", "Carbs (g)"],
-                ["fat", "Fat (g)"],
-                ["weightKg", "Target weight (kg)"],
-              ] as const
-            ).map(([key, label]) => (
-              <div key={key} className="space-y-1.5">
-                <Label htmlFor={key}>{label}</Label>
-                <Input
-                  id={key}
-                  type="number"
-                  className="h-11 rounded-xl"
-                  value={goalDraft[key]}
-                  onChange={(e) =>
-                    setGoalDraft((g) => ({
-                      ...g,
-                      [key]: Number(e.target.value),
-                    }))
-                  }
-                />
-              </div>
-            ))}
-          </div>
-          <Button
-            className="h-11 w-full rounded-full bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-deep)]"
-            onClick={() => {
-              setGoals(goalDraft);
-              setGoalsOpen(false);
-            }}
-          >
-            Save goals
-          </Button>
         </DialogContent>
       </Dialog>
     </div>

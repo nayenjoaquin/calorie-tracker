@@ -24,6 +24,7 @@ import {
   deleteWeight,
   loadAppData,
   saveAppData,
+  updateDisplayName,
   updateGoals,
   upsertRecipe,
   upsertWeight,
@@ -39,6 +40,7 @@ type StoreContextValue = {
   saveWeight: (entry: WeightEntry) => void;
   removeWeight: (id: string) => void;
   setGoals: (goals: Goals) => void;
+  setDisplayName: (displayName: string) => void;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -85,6 +87,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setData((prev) => updateGoals(prev, goals));
   }, []);
 
+  const setDisplayName = useCallback((displayName: string) => {
+    setData((prev) => updateDisplayName(prev, displayName));
+  }, []);
+
   const value = useMemo(
     () => ({
       data,
@@ -96,6 +102,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       saveWeight,
       removeWeight,
       setGoals,
+      setDisplayName,
     }),
     [
       data,
@@ -107,6 +114,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       saveWeight,
       removeWeight,
       setGoals,
+      setDisplayName,
     ],
   );
 

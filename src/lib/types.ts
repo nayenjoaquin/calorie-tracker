@@ -82,6 +82,7 @@ export type Goals = {
 };
 
 export type AppData = {
+  displayName: string;
   recipes: Recipe[];
   diary: DiaryEntry[];
   weights: WeightEntry[];
