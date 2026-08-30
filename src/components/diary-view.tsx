@@ -9,6 +9,7 @@ import {
   MacroStrip,
   NutrientPanel,
 } from "@/components/nutrient-panel";
+import { WeekDayBar, useDaySwipe } from "@/components/week-day-bar";
 import {
   multiplyNutrients,
   recipeNutrientsPerServing,
@@ -46,6 +47,12 @@ export function DiaryView() {
   const [servings, setServings] = useState("1");
   const [meal, setMeal] = useState<MealType>("lunch");
   const [goalDraft, setGoalDraft] = useState(data.goals);
+  const daySwipe = useDaySwipe(date, setDate);
+
+  const markedDates = useMemo(
+    () => new Set(data.diary.map((e) => e.date)),
+    [data.diary],
+  );
 
   const dayEntries = useMemo(
     () => data.diary.filter((e) => e.date === date),
@@ -70,6 +77,17 @@ export function DiaryView() {
     for (const e of dayEntries) map[e.meal].push(e);
     return map;
   }, [dayEntries]);
+
+  const dayHeading = useMemo(() => {
+    const today = todayISO();
+    if (date === today) return "Today";
+    const d = new Date(`${date}T12:00:00`);
+    return d.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+    });
+  }, [date]);
 
   function logRecipe() {
     const recipe = data.recipes.find((r) => r.id === selectedRecipe);
@@ -101,7 +119,7 @@ export function DiaryView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" {...daySwipe}>
       <section className="animate-rise space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -109,31 +127,28 @@ export function DiaryView() {
               Diary
             </h1>
             <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
-              Log food, hit your macros.
+              {dayHeading}
             </p>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="h-10 w-[9.5rem] rounded-full border-[color:var(--line)] bg-[color:var(--surface)] px-3 text-xs"
-              aria-label="Diary date"
-            />
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={() => {
-                setGoalDraft(data.goals);
-                setGoalsOpen(true);
-              }}
-              className="size-10 rounded-full border-[color:var(--line)]"
-              aria-label="Edit goals"
-            >
-              <Settings2 className="size-4" />
-            </Button>
-          </div>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={() => {
+              setGoalDraft(data.goals);
+              setGoalsOpen(true);
+            }}
+            className="size-10 rounded-full border-[color:var(--line)]"
+            aria-label="Edit goals"
+          >
+            <Settings2 className="size-4" />
+          </Button>
         </div>
+
+        <WeekDayBar
+          date={date}
+          onChange={setDate}
+          markedDates={markedDates}
+        />
 
         <div className="rounded-[1.5rem] bg-[color:var(--surface)]/90 p-5 shadow-[0_18px_40px_-28px_rgba(16,24,32,0.35)] ring-1 ring-[color:var(--line)]/70">
           <CalorieHero calories={totals.calories} goal={data.goals.calories} />
