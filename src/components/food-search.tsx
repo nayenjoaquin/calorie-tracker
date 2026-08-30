@@ -369,11 +369,21 @@ export function FoodSearch({
                     }}
                   >
                     <SelectTrigger className="h-11 w-full rounded-xl">
-                      <SelectValue />
+                      <SelectValue
+                        placeholder="Choose portion"
+                      >
+                        {selected.portions![portionIndex]
+                          ? `${selected.portions![portionIndex].label} · ${Math.round(selected.portions![portionIndex].gramWeight)}g`
+                          : null}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {selected.portions!.map((portion, idx) => (
-                        <SelectItem key={`${portion.label}-${idx}`} value={String(idx)}>
+                        <SelectItem
+                          key={`${portion.label}-${portion.gramWeight}-${idx}`}
+                          value={String(idx)}
+                          label={`${portion.label} · ${Math.round(portion.gramWeight)}g`}
+                        >
                           {portion.label} · {Math.round(portion.gramWeight)}g
                         </SelectItem>
                       ))}
