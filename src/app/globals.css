@@ -146,22 +146,28 @@
 }
 
 @keyframes day-from-right {
-  from {
-    opacity: 0.35;
-    transform: translateX(32%);
+  0% {
+    opacity: 0.25;
+    transform: translateX(42%);
   }
-  to {
+  60% {
+    opacity: 1;
+  }
+  100% {
     opacity: 1;
     transform: translateX(0);
   }
 }
 
 @keyframes day-from-left {
-  from {
-    opacity: 0.35;
-    transform: translateX(-32%);
+  0% {
+    opacity: 0.25;
+    transform: translateX(-42%);
   }
-  to {
+  60% {
+    opacity: 1;
+  }
+  100% {
     opacity: 1;
     transform: translateX(0);
   }
@@ -169,8 +175,8 @@
 
 @keyframes day-fade {
   from {
-    opacity: 0.5;
-    transform: translateY(6px);
+    opacity: 0.45;
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -179,15 +185,15 @@
 }
 
 .animate-day-from-right {
-  animation: day-from-right 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: day-from-right 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .animate-day-from-left {
-  animation: day-from-left 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: day-from-left 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .animate-day-fade {
-  animation: day-fade 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: day-fade 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .animate-rise {

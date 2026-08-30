@@ -40,7 +40,8 @@ const MEALS: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
 export function DiaryView() {
   const { data, ready, removeEntry, logEntry, setGoals } = useStore();
-  const { date, setDate, dir, dragX, setDragX } = useAnimatedDate(todayISO());
+  const { date, setDate, dir, dragX, setDragX, animKey } =
+    useAnimatedDate(todayISO());
   const [recipeOpen, setRecipeOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<string | null>(null);
@@ -152,7 +153,12 @@ export function DiaryView() {
           onDragX={setDragX}
         />
 
-        <DaySlide date={date} dir={dir} dragX={dragX} className="space-y-6">
+        <DaySlide
+          animKey={`${date}-${animKey}`}
+          dir={dir}
+          dragX={dragX}
+          className="space-y-6"
+        >
           <div className="rounded-[1.5rem] bg-[color:var(--surface)]/90 p-5 shadow-[0_18px_40px_-28px_rgba(16,24,32,0.35)] ring-1 ring-[color:var(--line)]/70">
             <CalorieHero calories={totals.calories} goal={data.goals.calories} />
             <div className="mt-5 border-t border-[color:var(--line)]/80 pt-4">

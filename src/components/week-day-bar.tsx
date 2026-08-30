@@ -1,6 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState, useCallback, type ReactNode } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -51,7 +57,6 @@ function formatWeekRange(weekStart: Date): string {
 }
 
 function dirForDelta(delta: number): SlideDir {
-  // finger moves left → content goes left → next day enters from right
   return delta < 0 ? "left" : "right";
 }
 
@@ -120,7 +125,7 @@ export function WeekDayBar({
     const delta = x - touchStartX.current;
     touchStartX.current = null;
     dragging.current = false;
-    if (Math.abs(delta) < 48) {
+    if (Math.abs(delta) < 40) {
       onDragX?.(0);
       return;
     }
@@ -143,6 +148,7 @@ export function WeekDayBar({
       }}
       onTouchMove={(e) => {
         e.stopPropagation();
+        if (e.cancelable) e.preventDefault();
         move(e.changedTouches[0]?.clientX ?? 0);
       }}
       onTouchEnd={(e) => {
@@ -156,7 +162,7 @@ export function WeekDayBar({
       }}
       onPointerDown={(e) => {
         if (e.pointerType === "touch") return;
-        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+        (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
         begin(e.clientX);
       }}
       onPointerMove={(e) => {
@@ -195,11 +201,13 @@ export function WeekDayBar({
       </div>
 
       <div
-        className="grid grid-cols-7 gap-1 transition-transform duration-150 ease-out"
+        className="grid grid-cols-7 gap-1 will-change-transform"
         style={{
-          transform: dragX
-            ? `translateX(${Math.max(-28, Math.min(28, dragX * 0.12))}px)`
-            : undefined,
+          transform: `translateX(${Math.max(-36, Math.min(36, dragX * 0.18))}px)`,
+          transition:
+            Math.abs(dragX) > 2
+              ? "none"
+              : "transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
         }}
       >
         {days.map((day) => (
@@ -217,7 +225,7 @@ export function WeekDayBar({
             className={cn(
               "relative flex flex-col items-center gap-1 rounded-2xl px-1 py-2 transition-[background-color,color,transform,box-shadow] duration-300 ease-out",
               day.isSelected
-                ? "bg-[color:var(--brand)] text-white shadow-[0_10px_24px_-14px_rgba(15,157,138,0.9)] scale-[1.04]"
+                ? "scale-[1.06] bg-[color:var(--brand)] text-white shadow-[0_10px_24px_-14px_rgba(15,157,138,0.9)]"
                 : day.isToday
                   ? "bg-[color:var(--brand-soft)] text-[color:var(--brand-deep)]"
                   : "text-[color:var(--ink-soft)] active:bg-[color:var(--mist)]",
@@ -259,7 +267,7 @@ export function useDaySwipe(
   date: string,
   onChange: (iso: string, dir?: SlideDir) => void,
   onDragX?: (x: number) => void,
-  threshold = 56,
+  threshold = 48,
 ) {
   const startX = useRef<number | null>(null);
 
@@ -291,13 +299,13 @@ export function useDaySwipe(
 }
 
 export function DaySlide({
-  date,
+  animKey,
   dir,
   dragX,
   children,
   className,
 }: {
-  date: string;
+  animKey: string;
   dir: SlideDir;
   dragX: number;
   children: ReactNode;
@@ -307,10 +315,22 @@ export function DaySlide({
 
   return (
     <div className="relative overflow-hidden">
+      {/* Peek of the outgoing direction while dragging */}
+      {dragging && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 w-10 rounded-2xl bg-[color:var(--brand)]/10"
+          style={{
+            [dragX < 0 ? "right" : "left"]: 0,
+            opacity: Math.min(0.9, Math.abs(dragX) / 160),
+          }}
+        />
+      )}
       <div
-        key={date}
+        key={animKey}
         className={cn(
           className,
+          "will-change-transform",
           !dragging && dir === "left" && "animate-day-from-right",
           !dragging && dir === "right" && "animate-day-from-left",
           !dragging && dir === "none" && "animate-day-fade",
@@ -319,13 +339,10 @@ export function DaySlide({
           dragging
             ? {
                 transform: `translateX(${dragX}px)`,
-                opacity: Math.max(0.55, 1 - Math.abs(dragX) / 420),
+                opacity: Math.max(0.45, 1 - Math.abs(dragX) / 380),
                 transition: "none",
               }
-            : {
-                transition:
-                  "transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease",
-              }
+            : undefined
         }
       >
         {children}
@@ -338,21 +355,25 @@ export function useAnimatedDate(initial: string) {
   const [date, setDateState] = useState(initial);
   const [dir, setDir] = useState<SlideDir>("none");
   const [dragX, setDragX] = useState(0);
+  const [animKey, setAnimKey] = useState(0);
 
   const setDate = useCallback((next: string, slide: SlideDir = "none") => {
     setDateState((prev) => {
       if (next === prev) {
-        setDir("none");
         setDragX(0);
         return prev;
       }
       const resolved: SlideDir =
         slide === "none" ? (next > prev ? "left" : "right") : slide;
-      setDir(resolved);
-      setDragX(0);
+      // Schedule related state outside the updater for React correctness
+      queueMicrotask(() => {
+        setDir(resolved);
+        setDragX(0);
+        setAnimKey((k) => k + 1);
+      });
       return next;
     });
   }, []);
 
-  return { date, setDate, dir, dragX, setDragX };
+  return { date, setDate, dir, dragX, setDragX, animKey };
 }
