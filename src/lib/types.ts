@@ -23,12 +23,19 @@ export type Nutrients = {
   vitaminB12: number;
 };
 
+export type FoodPortion = {
+  label: string;
+  gramWeight: number;
+};
+
 export type FoodItem = {
   fdcId: number;
   description: string;
   brandOwner?: string;
   dataType: string;
   nutrientsPer100g: Nutrients;
+  /** USDA household measures; omitted when the food has none */
+  portions?: FoodPortion[];
 };
 
 export type RecipeIngredient = {
