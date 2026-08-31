@@ -259,19 +259,17 @@ export function DiaryView() {
                       </span>
                       <DropdownMenu>
                         <DropdownMenuTrigger
-                          render={
-                            <Button
-                              size="icon-sm"
-                              variant="ghost"
-                              aria-label={`${mealTitle(m)} options`}
-                              className="touch-target shrink-0 text-[color:var(--quiet)]"
-                            />
-                          }
+                          aria-label={`${mealTitle(m)} options`}
+                          className={cn(
+                            buttonVariants({ size: "icon-sm", variant: "ghost" }),
+                            "touch-target shrink-0 text-[color:var(--quiet)]",
+                          )}
                         >
                           <MoreVertical className="size-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="end"
+                          sideOffset={6}
                           className="min-w-44 rounded-xl border-[color:var(--line)] bg-[color:var(--surface)] p-1 shadow-lg"
                         >
                           <DropdownMenuItem
