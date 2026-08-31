@@ -270,7 +270,7 @@ export function DiaryView() {
                         <DropdownMenuContent
                           align="end"
                           sideOffset={6}
-                          className="min-w-44 rounded-xl border-[color:var(--line)] bg-[color:var(--surface)] p-1 shadow-lg"
+                          className="w-auto min-w-44 rounded-xl border-[color:var(--line)] bg-[color:var(--surface)] p-1 shadow-lg"
                         >
                           <DropdownMenuItem
                             disabled={byMeal[m].length === 0}
