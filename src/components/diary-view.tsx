@@ -143,13 +143,15 @@ export function DiaryView() {
           </Link>
         </div>
 
-        <WeekDayBar
-          date={date}
-          onChange={setDate}
-          markedDates={markedDates}
-          dragX={dragX}
-          onDragX={setDragX}
-        />
+        <div className="sticky top-14 z-20 -mx-4 bg-gradient-to-b from-[color:var(--bg)] via-[color:var(--bg)] to-transparent px-4 pb-4 pt-1 md:-mx-6 md:px-6">
+          <WeekDayBar
+            date={date}
+            onChange={setDate}
+            markedDates={markedDates}
+            dragX={dragX}
+            onDragX={setDragX}
+          />
+        </div>
 
         <DaySlide
           animKey={`${date}-${animKey}`}
