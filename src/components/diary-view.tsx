@@ -121,29 +121,8 @@ export function DiaryView() {
 
   return (
     <div {...daySwipe}>
-      <div className="fixed inset-x-0 top-14 z-20 bg-[color:var(--background)] pt-4">
-        <div className="mx-auto max-w-lg px-4 md:max-w-3xl md:px-6">
-          <div className="mb-4 flex items-start justify-between gap-3">
-            <div>
-              <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[color:var(--ink)]">
-                {greeting ? `${greeting}'s diary` : "Diary"}
-              </h1>
-              <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
-                {dayHeading}
-              </p>
-            </div>
-            <Link
-              href="/settings"
-              className={cn(
-                buttonVariants({ size: "icon", variant: "outline" }),
-                "size-10 rounded-full border-[color:var(--line)]",
-              )}
-              aria-label="Open settings"
-            >
-              <Settings2 className="size-4" />
-            </Link>
-          </div>
-
+      <div className="fixed inset-x-0 top-14 z-20 bg-[color:var(--background)] px-4 py-2 md:px-6">
+        <div className="mx-auto max-w-lg md:max-w-3xl">
           <WeekDayBar
             date={date}
             onChange={setDate}
@@ -154,7 +133,28 @@ export function DiaryView() {
         </div>
       </div>
 
-      <section className="mt-52 space-y-6">
+      <div className="mt-36 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[color:var(--ink)]">
+            {greeting ? `${greeting}'s diary` : "Diary"}
+          </h1>
+          <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
+            {dayHeading}
+          </p>
+        </div>
+        <Link
+          href="/settings"
+          className={cn(
+            buttonVariants({ size: "icon", variant: "outline" }),
+            "size-10 rounded-full border-[color:var(--line)]",
+          )}
+          aria-label="Open settings"
+        >
+          <Settings2 className="size-4" />
+        </Link>
+      </div>
+
+      <section className="mt-6 space-y-6">
         <DaySlide
           animKey={`${date}-${animKey}`}
           dir={dir}
