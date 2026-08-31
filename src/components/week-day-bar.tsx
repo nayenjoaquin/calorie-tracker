@@ -129,7 +129,7 @@ export function WeekDayBar({
       onDragX?.(0);
       return;
     }
-    onChange(shiftISO(date, delta < 0 ? 1 : -1), dirForDelta(delta));
+    shiftWeek(delta < 0 ? 1 : -1);
   }
 
   function shiftWeek(weeks: number) {
@@ -257,7 +257,7 @@ export function WeekDayBar({
       </div>
 
       <p className="mt-2 text-center text-[11px] text-[color:var(--quiet)]">
-        Swipe to change day
+        Swipe to change week
       </p>
     </div>
   );
