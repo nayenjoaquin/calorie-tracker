@@ -120,30 +120,30 @@ export function DiaryView() {
   const greeting = data.displayName.trim();
 
   return (
-    <div className="space-y-6" {...daySwipe}>
-      <section className="space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[color:var(--ink)]">
-              {greeting ? `${greeting}'s diary` : "Diary"}
-            </h1>
-            <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
-              {dayHeading}
-            </p>
+    <div {...daySwipe}>
+      <div className="fixed inset-x-0 top-14 z-20 bg-[color:var(--background)] pt-4">
+        <div className="mx-auto max-w-lg px-4 md:max-w-3xl md:px-6">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[color:var(--ink)]">
+                {greeting ? `${greeting}'s diary` : "Diary"}
+              </h1>
+              <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
+                {dayHeading}
+              </p>
+            </div>
+            <Link
+              href="/settings"
+              className={cn(
+                buttonVariants({ size: "icon", variant: "outline" }),
+                "size-10 rounded-full border-[color:var(--line)]",
+              )}
+              aria-label="Open settings"
+            >
+              <Settings2 className="size-4" />
+            </Link>
           </div>
-          <Link
-            href="/settings"
-            className={cn(
-              buttonVariants({ size: "icon", variant: "outline" }),
-              "size-10 rounded-full border-[color:var(--line)]",
-            )}
-            aria-label="Open settings"
-          >
-            <Settings2 className="size-4" />
-          </Link>
-        </div>
 
-        <div className="sticky top-14 z-20 -mx-4 bg-gradient-to-b from-[color:var(--bg)] via-[color:var(--bg)] to-transparent px-4 pb-4 pt-1 md:-mx-6 md:px-6">
           <WeekDayBar
             date={date}
             onChange={setDate}
@@ -152,7 +152,9 @@ export function DiaryView() {
             onDragX={setDragX}
           />
         </div>
+      </div>
 
+      <section className="mt-52 space-y-6">
         <DaySlide
           animKey={`${date}-${animKey}`}
           dir={dir}
