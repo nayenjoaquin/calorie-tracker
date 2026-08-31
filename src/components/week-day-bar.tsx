@@ -151,7 +151,7 @@ export function WeekDayBar({
   return (
     <div
       className={cn(
-        "select-none touch-pan-y rounded-[1.25rem] bg-[color:var(--surface)]/90 p-3 ring-1 ring-[color:var(--line)]/70",
+        "select-none touch-pan-y overflow-hidden rounded-[1.25rem] bg-[color:var(--surface)]/90 p-3 ring-1 ring-[color:var(--line)]/70",
         className,
       )}
       onTouchStart={(e) => {
@@ -186,8 +186,8 @@ export function WeekDayBar({
         end(e.clientX);
       }}
     >
-      <DaySlide
-        animKey={`${toISODate(weekStart)}-${weekAnimKey}`}
+      <WeekSlide
+        animKey={`week-${weekAnimKey}`}
         dir={weekDir}
         dragX={weekDragging ? weekDragX : dayNudgeX}
         className="space-y-2"
@@ -268,7 +268,7 @@ export function WeekDayBar({
         <p className="text-center text-[11px] text-[color:var(--quiet)]">
           Swipe to change week
         </p>
-      </DaySlide>
+      </WeekSlide>
     </div>
   );
 }
@@ -306,6 +306,58 @@ export function useDaySwipe(
       onDragX?.(0);
     },
   };
+}
+
+export function WeekSlide({
+  animKey,
+  dir,
+  dragX,
+  children,
+  className,
+}: {
+  animKey: string;
+  dir: SlideDir;
+  dragX: number;
+  children: ReactNode;
+  className?: string;
+}) {
+  const dragging = Math.abs(dragX) > 2;
+
+  return (
+    <div className="relative overflow-hidden">
+      {dragging && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 w-12 rounded-2xl bg-[color:var(--brand)]/12"
+          style={{
+            [dragX < 0 ? "right" : "left"]: 0,
+            opacity: Math.min(0.95, Math.abs(dragX) / 120),
+          }}
+        />
+      )}
+      <div
+        key={animKey}
+        className={cn(
+          className,
+          "will-change-transform",
+          !dragging && dir === "left" && "animate-week-from-right",
+          !dragging && dir === "right" && "animate-week-from-left",
+          !dragging && dir === "none" && "animate-day-fade",
+        )}
+        style={
+          dragging
+            ? {
+                transform: `translateX(${dragX}px)`,
+                opacity: Math.max(0.35, 1 - Math.abs(dragX) / 260),
+                transition: "none",
+              }
+            : undefined
+        }
+      >
+        {children}
+      </div>
+    </div>
+  );
 }
 
 export function DaySlide({
