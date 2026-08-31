@@ -65,8 +65,8 @@ export type WeekDayBarProps = {
   onChange: (iso: string, dir?: SlideDir) => void;
   markedDates?: Set<string> | string[];
   className?: string;
-  dragX?: number;
-  onDragX?: (x: number) => void;
+  /** Subtle nudge while swiping diary content (day-by-day). */
+  dayDragX?: number;
   minimal?: boolean;
 };
 
@@ -75,12 +75,14 @@ export function WeekDayBar({
   onChange,
   markedDates,
   className,
-  dragX = 0,
-  onDragX,
+  dayDragX = 0,
   minimal = false,
 }: WeekDayBarProps) {
   const touchStartX = useRef<number | null>(null);
   const dragging = useRef(false);
+  const [weekDragX, setWeekDragX] = useState(0);
+  const [weekDir, setWeekDir] = useState<SlideDir>("none");
+  const [weekAnimKey, setWeekAnimKey] = useState(0);
   const marked = useMemo(() => {
     if (!markedDates) return new Set<string>();
     return markedDates instanceof Set ? markedDates : new Set(markedDates);
@@ -114,34 +116,44 @@ export function WeekDayBar({
 
   function move(x: number) {
     if (!dragging.current || touchStartX.current == null) return;
-    onDragX?.(x - touchStartX.current);
+    setWeekDragX(x - touchStartX.current);
   }
 
   function end(x: number) {
     if (!dragging.current || touchStartX.current == null) {
       dragging.current = false;
       touchStartX.current = null;
-      onDragX?.(0);
+      setWeekDragX(0);
       return;
     }
     const delta = x - touchStartX.current;
     touchStartX.current = null;
     dragging.current = false;
     if (Math.abs(delta) < 40) {
-      onDragX?.(0);
+      setWeekDragX(0);
       return;
     }
-    onChange(shiftISO(date, delta < 0 ? 1 : -1), dirForDelta(delta));
+    shiftWeek(delta < 0 ? 1 : -1);
   }
 
   function shiftWeek(weeks: number) {
-    onChange(shiftISO(date, weeks * 7), weeks > 0 ? "left" : "right");
+    const slide: SlideDir = weeks > 0 ? "left" : "right";
+    setWeekDir(slide);
+    setWeekDragX(0);
+    setWeekAnimKey((k) => k + 1);
+    onChange(shiftISO(date, weeks * 7), slide);
   }
+
+  const weekDragging = Math.abs(weekDragX) > 2;
+  const dayNudgeX =
+    !weekDragging && dayDragX
+      ? Math.max(-36, Math.min(36, dayDragX * 0.18))
+      : 0;
 
   return (
     <div
       className={cn(
-        "select-none touch-pan-y",
+        "select-none touch-pan-y overflow-hidden",
         minimal
           ? "py-1"
           : "rounded-[1.25rem] bg-[color:var(--surface)]/90 p-3 ring-1 ring-[color:var(--line)]/70",
@@ -163,7 +175,7 @@ export function WeekDayBar({
       onTouchCancel={() => {
         dragging.current = false;
         touchStartX.current = null;
-        onDragX?.(0);
+        setWeekDragX(0);
       }}
       onPointerDown={(e) => {
         if (e.pointerType === "touch") return;
@@ -179,95 +191,93 @@ export function WeekDayBar({
         end(e.clientX);
       }}
     >
-      {!minimal && (
-        <div className="mb-2 flex items-center justify-between gap-2 px-0.5">
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="ghost"
-            aria-label="Previous week"
-            className="touch-target"
-            onClick={() => shiftWeek(-1)}
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <p className="text-xs font-semibold tabular-nums text-[color:var(--ink-soft)]">
-            {formatWeekRange(weekStart)}
-          </p>
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="ghost"
-            aria-label="Next week"
-            className="touch-target"
-            onClick={() => shiftWeek(1)}
-          >
-            <ChevronRight className="size-4" />
-          </Button>
-        </div>
-      )}
-
-      <div
-        className="grid grid-cols-7 gap-1 will-change-transform"
-        style={{
-          transform: `translateX(${Math.max(-36, Math.min(36, dragX * 0.18))}px)`,
-          transition:
-            Math.abs(dragX) > 2
-              ? "none"
-              : "transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
-        }}
+      <WeekSlide
+        animKey={`week-${weekAnimKey}`}
+        dir={weekDir}
+        dragX={weekDragging ? weekDragX : dayNudgeX}
+        className={minimal ? undefined : "space-y-2"}
       >
-        {days.map((day) => (
-          <button
-            key={day.iso}
-            type="button"
-            onClick={() =>
-              onChange(
-                day.iso,
-                day.iso === date ? "none" : day.iso > date ? "left" : "right",
-              )
-            }
-            aria-pressed={day.isSelected}
-            aria-label={`${day.label} ${day.dayNum}${day.isToday ? ", today" : ""}`}
-            className={cn(
-              "relative flex flex-col items-center gap-1 rounded-2xl px-1 py-2 transition-[background-color,color,transform,box-shadow] duration-300 ease-out",
-              day.isSelected
-                ? "scale-[1.06] bg-[color:var(--brand)] text-white shadow-[0_10px_24px_-14px_rgba(15,157,138,0.9)]"
-                : day.isToday
-                  ? "bg-[color:var(--brand-soft)] text-[color:var(--brand-deep)]"
-                  : "text-[color:var(--ink-soft)] active:bg-[color:var(--mist)]",
-            )}
-          >
-            <span
+        {!minimal && (
+          <div className="flex items-center justify-between gap-2 px-0.5">
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              aria-label="Previous week"
+              className="touch-target"
+              onClick={() => shiftWeek(-1)}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <p className="text-xs font-semibold tabular-nums text-[color:var(--ink-soft)]">
+              {formatWeekRange(weekStart)}
+            </p>
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              aria-label="Next week"
+              className="touch-target"
+              onClick={() => shiftWeek(1)}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        )}
+
+        <div className="grid grid-cols-7 gap-1">
+          {days.map((day) => (
+            <button
+              key={day.iso}
+              type="button"
+              onClick={() =>
+                onChange(
+                  day.iso,
+                  day.iso === date ? "none" : day.iso > date ? "left" : "right",
+                )
+              }
+              aria-pressed={day.isSelected}
+              aria-label={`${day.label} ${day.dayNum}${day.isToday ? ", today" : ""}`}
               className={cn(
-                "text-[10px] font-semibold uppercase tracking-wide",
-                day.isSelected ? "text-white/80" : "text-[color:var(--quiet)]",
+                "relative flex flex-col items-center gap-1 rounded-2xl px-1 py-2 transition-[background-color,color,transform,box-shadow] duration-300 ease-out",
+                day.isSelected
+                  ? "scale-[1.06] bg-[color:var(--brand)] text-white shadow-[0_10px_24px_-14px_rgba(15,157,138,0.9)]"
+                  : day.isToday
+                    ? "bg-[color:var(--brand-soft)] text-[color:var(--brand-deep)]"
+                    : "text-[color:var(--ink-soft)] active:bg-[color:var(--mist)]",
               )}
             >
-              {day.label}
-            </span>
-            <span className="font-[family-name:var(--font-display)] text-base font-semibold tabular-nums leading-none">
-              {day.dayNum}
-            </span>
-            <span
-              className={cn(
-                "mt-0.5 size-1 rounded-full transition-colors",
-                day.hasEntries
-                  ? day.isSelected
-                    ? "bg-white"
-                    : "bg-[color:var(--brand)]"
-                  : "bg-transparent",
-              )}
-            />
-          </button>
-        ))}
-      </div>
+              <span
+                className={cn(
+                  "text-[10px] font-semibold uppercase tracking-wide",
+                  day.isSelected ? "text-white/80" : "text-[color:var(--quiet)]",
+                )}
+              >
+                {day.label}
+              </span>
+              <span className="font-[family-name:var(--font-display)] text-base font-semibold tabular-nums leading-none">
+                {day.dayNum}
+              </span>
+              <span
+                className={cn(
+                  "mt-0.5 size-1 rounded-full transition-colors",
+                  day.hasEntries
+                    ? day.isSelected
+                      ? "bg-white"
+                      : "bg-[color:var(--brand)]"
+                    : "bg-transparent",
+                )}
+              />
+            </button>
+          ))}
+        </div>
 
-      {!minimal && (
-        <p className="mt-2 text-center text-[11px] text-[color:var(--quiet)]">
-          Swipe to change day
-        </p>
-      )}
+        {!minimal && (
+          <p className="text-center text-[11px] text-[color:var(--quiet)]">
+            Swipe to change week
+          </p>
+        )}
+      </WeekSlide>
     </div>
   );
 }
@@ -307,6 +317,58 @@ export function useDaySwipe(
   };
 }
 
+export function WeekSlide({
+  animKey,
+  dir,
+  dragX,
+  children,
+  className,
+}: {
+  animKey: string;
+  dir: SlideDir;
+  dragX: number;
+  children: ReactNode;
+  className?: string;
+}) {
+  const dragging = Math.abs(dragX) > 2;
+
+  return (
+    <div className="relative overflow-hidden">
+      {dragging && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 w-12 rounded-2xl bg-[color:var(--brand)]/12"
+          style={{
+            [dragX < 0 ? "right" : "left"]: 0,
+            opacity: Math.min(0.95, Math.abs(dragX) / 120),
+          }}
+        />
+      )}
+      <div
+        key={animKey}
+        className={cn(
+          className,
+          "will-change-transform",
+          !dragging && dir === "left" && "animate-week-from-right",
+          !dragging && dir === "right" && "animate-week-from-left",
+          !dragging && dir === "none" && "animate-day-fade",
+        )}
+        style={
+          dragging
+            ? {
+                transform: `translateX(${dragX}px)`,
+                opacity: Math.max(0.35, 1 - Math.abs(dragX) / 260),
+                transition: "none",
+              }
+            : undefined
+        }
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function DaySlide({
   animKey,
   dir,
@@ -324,7 +386,6 @@ export function DaySlide({
 
   return (
     <div className="relative overflow-hidden">
-      {/* Peek of the outgoing direction while dragging */}
       {dragging && (
         <div
           aria-hidden
@@ -374,7 +435,6 @@ export function useAnimatedDate(initial: string) {
       }
       const resolved: SlideDir =
         slide === "none" ? (next > prev ? "left" : "right") : slide;
-      // Schedule related state outside the updater for React correctness
       queueMicrotask(() => {
         setDir(resolved);
         setDragX(0);

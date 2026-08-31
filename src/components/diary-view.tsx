@@ -185,8 +185,7 @@ export function DiaryView() {
             date={date}
             onChange={setDate}
             markedDates={markedDates}
-            dragX={dragX}
-            onDragX={setDragX}
+            dayDragX={dragX}
             minimal
           />
         </div>
