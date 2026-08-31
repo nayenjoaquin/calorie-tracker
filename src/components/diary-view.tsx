@@ -178,36 +178,41 @@ export function DiaryView() {
   const greeting = data.displayName.trim();
 
   return (
-    <div className="space-y-6" {...daySwipe}>
-      <section className="space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[color:var(--ink)]">
-              {greeting ? `${greeting}'s diary` : "Diary"}
-            </h1>
-            <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
-              {dayHeading}
-            </p>
-          </div>
-          <Link
-            href="/settings"
-            className={cn(
-              buttonVariants({ size: "icon", variant: "outline" }),
-              "size-10 rounded-full border-[color:var(--line)]",
-            )}
-            aria-label="Open settings"
-          >
-            <Settings2 className="size-4" />
-          </Link>
+    <div {...daySwipe}>
+      <div className="fixed inset-x-0 top-14 z-20 bg-[color:var(--background)] px-4 py-2 md:px-6">
+        <div className="mx-auto max-w-lg md:max-w-3xl">
+          <WeekDayBar
+            date={date}
+            onChange={setDate}
+            markedDates={markedDates}
+            dayDragX={dragX}
+            minimal
+          />
         </div>
+      </div>
 
-        <WeekDayBar
-          date={date}
-          onChange={setDate}
-          markedDates={markedDates}
-          dayDragX={dragX}
-        />
+      <div className="mt-28 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[color:var(--ink)]">
+            {greeting ? `${greeting}'s diary` : "Diary"}
+          </h1>
+          <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
+            {dayHeading}
+          </p>
+        </div>
+        <Link
+          href="/settings"
+          className={cn(
+            buttonVariants({ size: "icon", variant: "outline" }),
+            "size-10 rounded-full border-[color:var(--line)]",
+          )}
+          aria-label="Open settings"
+        >
+          <Settings2 className="size-4" />
+        </Link>
+      </div>
 
+      <section className="mt-6 space-y-6">
         <DaySlide
           animKey={`${date}-${animKey}`}
           dir={dir}

@@ -67,6 +67,7 @@ export type WeekDayBarProps = {
   className?: string;
   /** Subtle nudge while swiping diary content (day-by-day). */
   dayDragX?: number;
+  minimal?: boolean;
 };
 
 export function WeekDayBar({
@@ -75,6 +76,7 @@ export function WeekDayBar({
   markedDates,
   className,
   dayDragX = 0,
+  minimal = false,
 }: WeekDayBarProps) {
   const touchStartX = useRef<number | null>(null);
   const dragging = useRef(false);
@@ -151,7 +153,10 @@ export function WeekDayBar({
   return (
     <div
       className={cn(
-        "select-none touch-pan-y overflow-hidden rounded-[1.25rem] bg-[color:var(--surface)]/90 p-3 ring-1 ring-[color:var(--line)]/70",
+        "select-none touch-pan-y overflow-hidden",
+        minimal
+          ? "py-1"
+          : "rounded-[1.25rem] bg-[color:var(--surface)]/90 p-3 ring-1 ring-[color:var(--line)]/70",
         className,
       )}
       onTouchStart={(e) => {
@@ -190,33 +195,35 @@ export function WeekDayBar({
         animKey={`week-${weekAnimKey}`}
         dir={weekDir}
         dragX={weekDragging ? weekDragX : dayNudgeX}
-        className="space-y-2"
+        className={minimal ? undefined : "space-y-2"}
       >
-        <div className="flex items-center justify-between gap-2 px-0.5">
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="ghost"
-            aria-label="Previous week"
-            className="touch-target"
-            onClick={() => shiftWeek(-1)}
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <p className="text-xs font-semibold tabular-nums text-[color:var(--ink-soft)]">
-            {formatWeekRange(weekStart)}
-          </p>
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="ghost"
-            aria-label="Next week"
-            className="touch-target"
-            onClick={() => shiftWeek(1)}
-          >
-            <ChevronRight className="size-4" />
-          </Button>
-        </div>
+        {!minimal && (
+          <div className="flex items-center justify-between gap-2 px-0.5">
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              aria-label="Previous week"
+              className="touch-target"
+              onClick={() => shiftWeek(-1)}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <p className="text-xs font-semibold tabular-nums text-[color:var(--ink-soft)]">
+              {formatWeekRange(weekStart)}
+            </p>
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              aria-label="Next week"
+              className="touch-target"
+              onClick={() => shiftWeek(1)}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        )}
 
         <div className="grid grid-cols-7 gap-1">
           {days.map((day) => (
@@ -265,9 +272,11 @@ export function WeekDayBar({
           ))}
         </div>
 
-        <p className="text-center text-[11px] text-[color:var(--quiet)]">
-          Swipe to change week
-        </p>
+        {!minimal && (
+          <p className="text-center text-[11px] text-[color:var(--quiet)]">
+            Swipe to change week
+          </p>
+        )}
       </WeekSlide>
     </div>
   );
@@ -377,7 +386,6 @@ export function DaySlide({
 
   return (
     <div className="relative overflow-hidden">
-      {/* Peek of the outgoing direction while dragging */}
       {dragging && (
         <div
           aria-hidden
@@ -427,7 +435,6 @@ export function useAnimatedDate(initial: string) {
       }
       const resolved: SlideDir =
         slide === "none" ? (next > prev ? "left" : "right") : slide;
-      // Schedule related state outside the updater for React correctness
       queueMicrotask(() => {
         setDir(resolved);
         setDragX(0);

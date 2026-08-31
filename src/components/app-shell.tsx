@@ -29,7 +29,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="absolute top-40 -right-16 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(94,200,255,0.2),transparent_70%)] blur-2xl" />
       </div>
 
-      <header className="sticky top-0 z-30 border-b border-[color:var(--line)]/60 bg-[color:var(--surface)]/80 backdrop-blur-xl">
+      <header className="fixed inset-x-0 top-0 z-30 border-b border-[color:var(--line)]/60 bg-[color:var(--surface)]/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4 md:max-w-3xl md:px-6">
           <Link href="/" className="flex items-center gap-2">
             <span className="grid size-8 place-items-center rounded-xl bg-[color:var(--brand)] text-sm font-bold text-white shadow-[0_8px_20px_-10px_rgba(15,157,138,0.8)]">
@@ -64,7 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="page-pad relative z-10 mx-auto w-full max-w-lg flex-1 px-4 pt-5 md:max-w-3xl md:px-6 md:pt-8">
+      <main className="page-pad relative z-10 mx-auto mt-14 w-full max-w-lg flex-1 px-4 pt-5 md:max-w-3xl md:px-6 md:pt-8">
         {children}
       </main>
 
