@@ -11,6 +11,14 @@ import { DEFAULT_GOALS } from "./types";
 const STORAGE_KEY = "platewise-data-v1";
 const MAX_RECENT_FOODS = 20;
 
+function sameFoodId(
+  a: string | number | undefined,
+  b: string | number | undefined,
+): boolean {
+  if (a == null || b == null) return false;
+  return String(a) === String(b);
+}
+
 export function createDefaultData(): AppData {
   return {
     displayName: "",
@@ -90,21 +98,21 @@ export function updateGoals(data: AppData, goals: Goals): AppData {
 export function addRecentFood(data: AppData, food: FoodItem): AppData {
   const recentFoods = [
     food,
-    ...data.recentFoods.filter((f) => f.fdcId !== food.fdcId),
+    ...data.recentFoods.filter((f) => !sameFoodId(f.fdcId, food.fdcId)),
   ].slice(0, MAX_RECENT_FOODS);
   return { ...data, recentFoods };
 }
 
 export function toggleFavoriteFood(data: AppData, food: FoodItem): AppData {
-  const exists = data.favoriteFoods.some((f) => f.fdcId === food.fdcId);
+  const exists = data.favoriteFoods.some((f) => sameFoodId(f.fdcId, food.fdcId));
   const favoriteFoods = exists
-    ? data.favoriteFoods.filter((f) => f.fdcId !== food.fdcId)
+    ? data.favoriteFoods.filter((f) => !sameFoodId(f.fdcId, food.fdcId))
     : [food, ...data.favoriteFoods];
   return { ...data, favoriteFoods };
 }
 
-export function isFavoriteFood(data: AppData, fdcId: number): boolean {
-  return data.favoriteFoods.some((f) => f.fdcId === fdcId);
+export function isFavoriteFood(data: AppData, fdcId: string): boolean {
+  return data.favoriteFoods.some((f) => sameFoodId(f.fdcId, fdcId));
 }
 
 export function updateDisplayName(data: AppData, displayName: string): AppData {

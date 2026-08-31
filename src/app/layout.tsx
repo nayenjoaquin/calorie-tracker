@@ -19,7 +19,7 @@ const sans = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "Platewise — calorie & nutrient tracker",
   description:
-    "Single-device calorie tracker with USDA FoodData Central, recipe CRUD, and weight progress.",
+    "Single-device calorie tracker with Open Food Facts, recipe CRUD, and weight progress.",
 };
 
 export const viewport = {

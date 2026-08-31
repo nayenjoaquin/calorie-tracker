@@ -37,7 +37,7 @@ function foodFromDiaryEntry(entry: DiaryEntry): FoodItem {
   const grams = entry.grams > 0 ? entry.grams : 100;
   const name = entry.name.replace(/\s*\(\d+(?:\.\d+)? servings?\)$/i, "").trim();
   return {
-    fdcId: entry.fdcId ?? 0,
+    fdcId: entry.fdcId ?? "",
     description: name || entry.name,
     dataType: entry.source === "recipe" ? "Recipe" : "Diary",
     nutrientsPer100g: multiplyNutrients(entry.nutrients, 100 / grams),
@@ -45,17 +45,17 @@ function foodFromDiaryEntry(entry: DiaryEntry): FoodItem {
 }
 
 function findKnownFood(
-  fdcId: number | undefined,
+  fdcId: string | undefined,
   catalog: FoodItem[],
 ): FoodItem | undefined {
-  if (fdcId == null || fdcId === 0) return undefined;
+  if (!fdcId?.trim()) return undefined;
   return catalog.find((f) => f.fdcId === fdcId);
 }
 
 /**
  * Convert a meal's diary entries into recipe ingredients.
  * Recipe-sourced entries expand into their original ingredients (scaled).
- * Food entries reuse known USDA foods when available, otherwise reconstruct
+ * Food entries reuse known foods when available, otherwise reconstruct
  * nutrients-per-100g from the logged amount.
  */
 export function mealEntriesToIngredients(

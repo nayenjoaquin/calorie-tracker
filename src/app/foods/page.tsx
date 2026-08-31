@@ -31,10 +31,10 @@ export default async function FoodsPage({
 
   const subtitle =
     meal && loggingDate !== today
-      ? `Search USDA, then log to ${meal} on ${loggingDate}.`
+      ? `Search Open Food Facts, then log to ${meal} on ${loggingDate}.`
       : meal
-        ? `Search USDA, then log to ${meal}.`
-        : "Search USDA for macros and micros, then log to today.";
+        ? `Search Open Food Facts, then log to ${meal}.`
+        : "Search Open Food Facts for macros and micros, then log to today.";
 
   return (
     <div className="animate-rise space-y-5">

@@ -140,7 +140,7 @@ export function RecipesView() {
             Recipes
           </h1>
           <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
-            Build meals from USDA foods.
+            Build meals from packaged foods.
           </p>
         </div>
         <Button
@@ -283,7 +283,7 @@ export function RecipesView() {
 
               {draft.ingredients.length === 0 ? (
                 <p className="text-sm text-[color:var(--quiet)]">
-                  Add at least one USDA food ingredient.
+                  Add at least one food ingredient.
                 </p>
               ) : (
                 <ul className="overflow-hidden rounded-2xl ring-1 ring-[color:var(--line)]/80">

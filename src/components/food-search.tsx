@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 
 type SearchPayload = {
   foods: FoodItem[];
-  source: "usda" | "mock";
+  source: "openfoodfacts" | "mock";
   message?: string;
 };
 
@@ -156,11 +156,9 @@ export function FoodSearch({
       if (res.ok) {
         const payload = (await res.json()) as {
           food: FoodItem;
-          source?: "usda" | "mock";
+          source?: "openfoodfacts" | "mock";
         };
         const detailed = payload.food;
-        // Sample FDC IDs can collide with unrelated USDA entries under DEMO_KEY.
-        // Keep the food the user clicked when the detail payload doesn't match.
         const clickedLabel = food.description.split(",")[0]?.toLowerCase() ?? "";
         const detailMatches =
           detailed.fdcId === food.fdcId &&
@@ -283,8 +281,8 @@ export function FoodSearch({
                 <Loader2 className="size-3.5 animate-spin" /> Searching…
               </>
             )}
-            {!pending && result?.source === "usda" && (
-              <span>Live USDA FoodData Central</span>
+            {!pending && result?.source === "openfoodfacts" && (
+              <span>Live Open Food Facts</span>
             )}
             {!pending && result?.source === "mock" && result.message && (
               <span>{result.message}</span>
@@ -513,7 +511,7 @@ function FoodList({
   foods: FoodItem[];
   emptyLabel: string;
   pending?: boolean;
-  favoriteIds: Set<number>;
+  favoriteIds: Set<string>;
   onOpen: (food: FoodItem) => void;
   onToggleFavorite: (food: FoodItem) => void;
 }) {

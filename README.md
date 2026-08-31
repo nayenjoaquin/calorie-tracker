@@ -2,7 +2,7 @@
 
 Single-device calorie and nutrient tracker.
 
-- Search **USDA FoodData Central** for macros and micronutrients
+- Search **Open Food Facts** for macros and micronutrients
 - Create, edit, and delete **recipes** built from those foods
 - Log a daily **food diary** and track **weight** progress locally in the browser
 
@@ -17,13 +17,7 @@ npm run dev
 
 Open [http://127.0.0.1:43147](http://127.0.0.1:43147).
 
-### USDA API key (optional)
-
-Platewise uses the USDA FoodData Central API. Without a key it falls back to `DEMO_KEY`, then to offline sample foods if the API is rate-limited or unreachable.
-
-1. Request a free key at [fdc.nal.usda.gov/api-key-signup](https://fdc.nal.usda.gov/api-key-signup.html)
-2. Copy `.env.example` to `.env.local`
-3. Set `USDA_FDC_API_KEY=your_key`
+Food search uses the [Open Food Facts](https://world.openfoodfacts.org) Search-a-licious API and product API. If those services are unavailable, Platewise falls back to offline sample foods.
 
 ## Scripts
 
@@ -47,4 +41,3 @@ Project-specific review focus lives in [`.cursor/BUGBOT.md`](.cursor/BUGBOT.md).
 **Manual triggers** on a PR comment: `cursor review` or `bugbot run` (use `bugbot run verbose=true` to debug).
 
 Autofix uses Cloud Agent credits and requires on-demand usage plus storage-enabled privacy settings (not Legacy Privacy Mode).
-

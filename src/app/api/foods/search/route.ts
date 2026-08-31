@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { searchFoods } from "@/lib/usda";
+import { searchFoods } from "@/lib/openfoodfacts";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

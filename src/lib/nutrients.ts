@@ -1,7 +1,7 @@
 import type { Nutrients } from "./types";
 import { EMPTY_NUTRIENTS } from "./types";
 
-/** USDA FoodData Central nutrient IDs we care about */
+/** Legacy USDA FoodData Central nutrient IDs (offline mock metadata). */
 export const NUTRIENT_IDS = {
   calories: 1008,
   protein: 1003,
@@ -112,6 +112,82 @@ export function parseUsdaNutrients(
     const value = item.value ?? item.amount ?? 0;
     result[key] = Number.isFinite(value) ? value : 0;
   }
+
+  return result;
+}
+
+type OffNutriments = Record<string, number | string | undefined>;
+
+function offNumber(
+  nutriments: OffNutriments | undefined,
+  key: string,
+): number | undefined {
+  const value = nutriments?.[`${key}_100g`];
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  return value;
+}
+
+function gramsToMg(value: number | undefined): number {
+  if (value == null) return 0;
+  return value * 1000;
+}
+
+export function parseOffNutrients(
+  nutriments: OffNutriments | undefined,
+): Nutrients {
+  const result: Nutrients = { ...EMPTY_NUTRIENTS };
+  if (!nutriments) return result;
+
+  const calories =
+    offNumber(nutriments, "energy-kcal") ??
+    (offNumber(nutriments, "energy")
+      ? offNumber(nutriments, "energy")! / 4.184
+      : undefined);
+  if (calories != null) result.calories = calories;
+
+  const protein = offNumber(nutriments, "proteins");
+  if (protein != null) result.protein = protein;
+
+  const carbs = offNumber(nutriments, "carbohydrates");
+  if (carbs != null) result.carbs = carbs;
+
+  const fat = offNumber(nutriments, "fat");
+  if (fat != null) result.fat = fat;
+
+  const fiber = offNumber(nutriments, "fiber");
+  if (fiber != null) result.fiber = fiber;
+
+  const sugar = offNumber(nutriments, "sugars");
+  if (sugar != null) result.sugar = sugar;
+
+  result.sodium = gramsToMg(offNumber(nutriments, "sodium"));
+  result.cholesterol = gramsToMg(offNumber(nutriments, "cholesterol"));
+  result.calcium = gramsToMg(offNumber(nutriments, "calcium"));
+  result.iron = gramsToMg(offNumber(nutriments, "iron"));
+  result.magnesium = gramsToMg(offNumber(nutriments, "magnesium"));
+  result.potassium = gramsToMg(offNumber(nutriments, "potassium"));
+  result.zinc = gramsToMg(offNumber(nutriments, "zinc"));
+
+  const vitaminA = offNumber(nutriments, "vitamin-a");
+  if (vitaminA != null) result.vitaminA = vitaminA;
+
+  const vitaminC = offNumber(nutriments, "vitamin-c");
+  if (vitaminC != null) result.vitaminC = vitaminC;
+
+  const vitaminD = offNumber(nutriments, "vitamin-d");
+  if (vitaminD != null) result.vitaminD = vitaminD;
+
+  const vitaminE = offNumber(nutriments, "vitamin-e");
+  if (vitaminE != null) result.vitaminE = vitaminE;
+
+  const vitaminK = offNumber(nutriments, "vitamin-k");
+  if (vitaminK != null) result.vitaminK = vitaminK;
+
+  const folate = offNumber(nutriments, "folates");
+  if (folate != null) result.folate = folate;
+
+  const vitaminB12 = offNumber(nutriments, "vitamin-b12");
+  if (vitaminB12 != null) result.vitaminB12 = vitaminB12;
 
   return result;
 }

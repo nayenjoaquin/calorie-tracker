@@ -29,12 +29,13 @@ export type FoodPortion = {
 };
 
 export type FoodItem = {
-  fdcId: number;
+  /** Open Food Facts barcode, or an offline sample id */
+  fdcId: string;
   description: string;
   brandOwner?: string;
   dataType: string;
   nutrientsPer100g: Nutrients;
-  /** USDA household measures; omitted when the food has none */
+  /** Household measures when available */
   portions?: FoodPortion[];
 };
 
@@ -60,7 +61,7 @@ export type DiaryEntry = {
   meal: MealType;
   name: string;
   source: "food" | "recipe";
-  fdcId?: number;
+  fdcId?: string;
   recipeId?: string;
   grams: number;
   nutrients: Nutrients;

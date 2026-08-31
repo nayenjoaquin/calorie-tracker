@@ -2,7 +2,7 @@ import type { FoodItem, FoodPortion, Nutrients } from "./types";
 import { EMPTY_NUTRIENTS } from "./types";
 
 function food(
-  fdcId: number,
+  fdcId: string,
   description: string,
   dataType: string,
   nutrients: Partial<Nutrients>,
@@ -19,10 +19,10 @@ function food(
   };
 }
 
-/** Offline sample foods used when USDA API is unavailable */
+/** Offline sample foods used when Open Food Facts is unavailable */
 export const MOCK_FOODS: FoodItem[] = [
   food(
-    171077,
+    "171077",
     "Chicken, broilers or fryers, breast, meat only, cooked, grilled",
     "SR Legacy",
     {
@@ -44,7 +44,7 @@ export const MOCK_FOODS: FoodItem[] = [
     ],
   ),
   food(
-    170567,
+    "170567",
     "Egg, whole, cooked, scrambled",
     "SR Legacy",
     {
@@ -67,7 +67,7 @@ export const MOCK_FOODS: FoodItem[] = [
     ],
   ),
   food(
-    168462,
+    "168462",
     "Bananas, raw",
     "SR Legacy",
     {
@@ -90,7 +90,7 @@ export const MOCK_FOODS: FoodItem[] = [
     ],
   ),
   food(
-    168421,
+    "168421",
     "Oats, regular and quick, unenriched, cooked with water",
     "SR Legacy",
     {
@@ -110,7 +110,7 @@ export const MOCK_FOODS: FoodItem[] = [
     ],
   ),
   food(
-    170457,
+    "170457",
     "Salmon, Atlantic, farmed, cooked, dry heat",
     "SR Legacy",
     {
@@ -128,7 +128,7 @@ export const MOCK_FOODS: FoodItem[] = [
     undefined,
     [{ label: "1 fillet", gramWeight: 154 }],
   ),
-  food(169231, "Broccoli, raw", "SR Legacy", {
+  food("169231", "Broccoli, raw", "SR Legacy", {
     calories: 34,
     protein: 2.82,
     fat: 0.37,
@@ -144,7 +144,7 @@ export const MOCK_FOODS: FoodItem[] = [
     { label: "1 cup chopped", gramWeight: 91 },
     { label: "1 spear (about 5\" long)", gramWeight: 31 },
   ]),
-  food(167514, "Rice, white, long-grain, regular, enriched, cooked", "SR Legacy", {
+  food("167514", "Rice, white, long-grain, regular, enriched, cooked", "SR Legacy", {
     calories: 130,
     protein: 2.69,
     fat: 0.28,
@@ -156,7 +156,7 @@ export const MOCK_FOODS: FoodItem[] = [
     { label: "1 cup", gramWeight: 158 },
   ]),
   food(
-    173944,
+    "173944",
     "Cheese, cheddar",
     "SR Legacy",
     {
@@ -177,7 +177,7 @@ export const MOCK_FOODS: FoodItem[] = [
     ],
   ),
   food(
-    167765,
+    "167765",
     "Yogurt, Greek, plain, nonfat",
     "SR Legacy",
     {
@@ -197,7 +197,7 @@ export const MOCK_FOODS: FoodItem[] = [
     ],
   ),
   food(
-    168203,
+    "168203",
     "Almonds, raw",
     "SR Legacy",
     {
@@ -219,7 +219,7 @@ export const MOCK_FOODS: FoodItem[] = [
     ],
   ),
   food(
-    170110,
+    "170110",
     "Sweet potato, cooked, baked in skin, without salt",
     "SR Legacy",
     {
@@ -240,7 +240,7 @@ export const MOCK_FOODS: FoodItem[] = [
     ],
   ),
   food(
-    169414,
+    "169414",
     "Avocado, raw, all commercial varieties",
     "SR Legacy",
     {
@@ -272,6 +272,7 @@ export function searchMockFoods(query: string): FoodItem[] {
   );
 }
 
-export function getMockFood(fdcId: number): FoodItem | undefined {
-  return MOCK_FOODS.find((f) => f.fdcId === fdcId);
+export function getMockFood(fdcId: string): FoodItem | undefined {
+  const key = fdcId.trim();
+  return MOCK_FOODS.find((f) => f.fdcId === key || f.fdcId === String(Number(key)));
 }
