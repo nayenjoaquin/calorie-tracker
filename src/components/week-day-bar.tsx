@@ -67,6 +67,7 @@ export type WeekDayBarProps = {
   className?: string;
   dragX?: number;
   onDragX?: (x: number) => void;
+  minimal?: boolean;
 };
 
 export function WeekDayBar({
@@ -76,6 +77,7 @@ export function WeekDayBar({
   className,
   dragX = 0,
   onDragX,
+  minimal = false,
 }: WeekDayBarProps) {
   const touchStartX = useRef<number | null>(null);
   const dragging = useRef(false);
@@ -139,7 +141,10 @@ export function WeekDayBar({
   return (
     <div
       className={cn(
-        "select-none touch-pan-y rounded-[1.25rem] bg-[color:var(--surface)]/90 p-3 ring-1 ring-[color:var(--line)]/70",
+        "select-none touch-pan-y",
+        minimal
+          ? "py-1"
+          : "rounded-[1.25rem] bg-[color:var(--surface)]/90 p-3 ring-1 ring-[color:var(--line)]/70",
         className,
       )}
       onTouchStart={(e) => {
@@ -174,31 +179,33 @@ export function WeekDayBar({
         end(e.clientX);
       }}
     >
-      <div className="mb-2 flex items-center justify-between gap-2 px-0.5">
-        <Button
-          type="button"
-          size="icon-sm"
-          variant="ghost"
-          aria-label="Previous week"
-          className="touch-target"
-          onClick={() => shiftWeek(-1)}
-        >
-          <ChevronLeft className="size-4" />
-        </Button>
-        <p className="text-xs font-semibold tabular-nums text-[color:var(--ink-soft)]">
-          {formatWeekRange(weekStart)}
-        </p>
-        <Button
-          type="button"
-          size="icon-sm"
-          variant="ghost"
-          aria-label="Next week"
-          className="touch-target"
-          onClick={() => shiftWeek(1)}
-        >
-          <ChevronRight className="size-4" />
-        </Button>
-      </div>
+      {!minimal && (
+        <div className="mb-2 flex items-center justify-between gap-2 px-0.5">
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="ghost"
+            aria-label="Previous week"
+            className="touch-target"
+            onClick={() => shiftWeek(-1)}
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <p className="text-xs font-semibold tabular-nums text-[color:var(--ink-soft)]">
+            {formatWeekRange(weekStart)}
+          </p>
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="ghost"
+            aria-label="Next week"
+            className="touch-target"
+            onClick={() => shiftWeek(1)}
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      )}
 
       <div
         className="grid grid-cols-7 gap-1 will-change-transform"
@@ -256,9 +263,11 @@ export function WeekDayBar({
         ))}
       </div>
 
-      <p className="mt-2 text-center text-[11px] text-[color:var(--quiet)]">
-        Swipe to change day
-      </p>
+      {!minimal && (
+        <p className="mt-2 text-center text-[11px] text-[color:var(--quiet)]">
+          Swipe to change day
+        </p>
+      )}
     </div>
   );
 }

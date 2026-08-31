@@ -129,11 +129,12 @@ export function DiaryView() {
             markedDates={markedDates}
             dragX={dragX}
             onDragX={setDragX}
+            minimal
           />
         </div>
       </div>
 
-      <div className="mt-36 flex items-start justify-between gap-3">
+      <div className="mt-28 flex items-start justify-between gap-3">
         <div>
           <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[color:var(--ink)]">
             {greeting ? `${greeting}'s diary` : "Diary"}
