@@ -283,17 +283,23 @@ export function FoodSearch({
                 <Loader2 className="size-3.5 animate-spin" /> Searching…
               </>
             )}
-            {!pending && result?.source === "usda" && (
-              <span>Live USDA FoodData Central</span>
-            )}
-            {!pending && result?.source === "mock" && result.message && (
-              <span>{result.message}</span>
-            )}
+            {!pending && result?.message && <span>{result.message}</span>}
+            {!pending &&
+              result &&
+              !result.message &&
+              result.source === "usda" &&
+              result.foods.length > 0 && (
+                <span>Live USDA FoodData Central</span>
+              )}
             {error && <span className="text-destructive">{error}</span>}
           </div>
           <FoodList
             foods={result?.foods ?? []}
-            emptyLabel="No foods yet. Try another search."
+            emptyLabel={
+              debounced
+                ? "No foods found. Try a different search term."
+                : "No foods yet. Try another search."
+            }
             pending={pending}
             favoriteIds={favoriteIds}
             onOpen={openFood}
