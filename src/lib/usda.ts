@@ -178,19 +178,27 @@ export async function searchFoods(query: string): Promise<FoodSearchResult> {
         foods: mock,
         source: mock.length ? "mock" : "usda",
         message: mock.length
-          ? "No USDA matches. Showing offline samples that match your query."
-          : "No foods found.",
+          ? "No USDA matches for that search. Showing offline sample foods."
+          : "No foods found. Try a different search term.",
       };
     }
 
     return { foods, source: "usda" };
   } catch {
     const mock = searchMockFoods(q);
+    if (mock.length) {
+      return {
+        foods: mock,
+        source: "mock",
+        message:
+          "USDA is temporarily unavailable. Showing offline sample foods.",
+      };
+    }
     return {
-      foods: mock,
-      source: "mock",
+      foods: [],
+      source: "usda",
       message:
-        "USDA API unavailable. Using offline sample foods. Set USDA_FDC_API_KEY for live data.",
+        "Couldn't reach USDA right now. Try again in a moment.",
     };
   }
 }
