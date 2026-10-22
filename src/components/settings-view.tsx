@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Check } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Camera, Check, Trash2 } from "lucide-react";
 import { useStore } from "@/components/store-provider";
+import {
+  ProfileAvatar,
+  fileToAvatarDataUrl,
+} from "@/components/profile-avatar";
 import type { Goals } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +21,7 @@ const GOAL_FIELDS = [
 ] as const;
 
 export function SettingsView() {
-  const { data, ready, setDisplayName, setGoals } = useStore();
+  const { data, ready, setDisplayName, setAvatar, setGoals } = useStore();
 
   if (!ready) {
     return (
@@ -30,8 +34,10 @@ export function SettingsView() {
   return (
     <SettingsEditor
       displayName={data.displayName}
+      avatarUrl={data.avatarUrl}
       goals={data.goals}
       onSaveName={setDisplayName}
+      onSaveAvatar={setAvatar}
       onSaveGoals={setGoals}
     />
   );
@@ -39,16 +45,23 @@ export function SettingsView() {
 
 function SettingsEditor({
   displayName,
+  avatarUrl,
   goals,
   onSaveName,
+  onSaveAvatar,
   onSaveGoals,
 }: {
   displayName: string;
+  avatarUrl: string;
   goals: Goals;
   onSaveName: (name: string) => void;
+  onSaveAvatar: (avatarUrl: string) => void;
   onSaveGoals: (goals: Goals) => void;
 }) {
   const [nameDraft, setNameDraft] = useState(displayName);
+  const [avatarDraft, setAvatarDraft] = useState(avatarUrl);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [goalDraft, setGoalDraft] = useState(goals);
   const [saved, setSaved] = useState<"profile" | "targets" | null>(null);
 
@@ -61,7 +74,25 @@ function SettingsEditor({
   function saveProfile(e: React.FormEvent) {
     e.preventDefault();
     onSaveName(nameDraft);
+    onSaveAvatar(avatarDraft);
     setSaved("profile");
+  }
+
+  async function pickAvatar(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Reset so picking the same file again still fires onChange
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setAvatarError("Please choose an image file.");
+      return;
+    }
+    try {
+      setAvatarDraft(await fileToAvatarDataUrl(file));
+      setAvatarError(null);
+    } catch {
+      setAvatarError("Couldn't read that image. Try a JPEG or PNG.");
+    }
   }
 
   function saveTargets(e: React.FormEvent) {
@@ -93,6 +124,60 @@ function SettingsEditor({
             How you appear in your diary.
           </p>
         </div>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="group relative rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]"
+            aria-label={avatarDraft ? "Change profile picture" : "Add profile picture"}
+          >
+            <ProfileAvatar
+              src={avatarDraft}
+              name={nameDraft}
+              className="size-20 text-2xl ring-1 ring-[color:var(--line)]"
+            />
+            <span className="absolute -right-0.5 -bottom-0.5 flex size-7 items-center justify-center rounded-full bg-[color:var(--brand)] text-white ring-2 ring-[color:var(--surface)] transition-colors group-hover:bg-[color:var(--brand-deep)]">
+              <Camera className="size-3.5" />
+            </span>
+          </button>
+          <div className="flex flex-col items-start gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {avatarDraft ? "Change photo" : "Upload photo"}
+            </Button>
+            {avatarDraft && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 rounded-full text-[color:var(--quiet)]"
+                onClick={() => {
+                  setAvatarDraft("");
+                  setAvatarError(null);
+                }}
+              >
+                <Trash2 className="size-3.5" /> Remove
+              </Button>
+            )}
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={pickAvatar}
+          />
+        </div>
+        {avatarError && (
+          <p className="text-sm text-[color:var(--destructive)]" role="alert">
+            {avatarError}
+          </p>
+        )}
         <div className="space-y-1.5">
           <Label htmlFor="display-name">Display name</Label>
           <Input
@@ -114,7 +199,7 @@ function SettingsEditor({
               <Check className="size-4" /> Saved
             </>
           ) : (
-            "Save name"
+            "Save profile"
           )}
         </Button>
       </form>
