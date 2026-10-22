@@ -83,6 +83,8 @@ export type Goals = {
 
 export type AppData = {
   displayName: string;
+  /** Profile picture as a downscaled JPEG data URL; empty when unset */
+  avatarUrl: string;
   recipes: Recipe[];
   diary: DiaryEntry[];
   weights: WeightEntry[];

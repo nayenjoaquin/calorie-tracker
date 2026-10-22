@@ -14,6 +14,7 @@ const MAX_RECENT_FOODS = 20;
 export function createDefaultData(): AppData {
   return {
     displayName: "",
+    avatarUrl: "",
     recipes: [],
     diary: [],
     weights: [],
@@ -32,6 +33,11 @@ export function loadAppData(): AppData {
     return {
       displayName:
         typeof parsed.displayName === "string" ? parsed.displayName : "",
+      avatarUrl:
+        typeof parsed.avatarUrl === "string" &&
+        parsed.avatarUrl.startsWith("data:image/")
+          ? parsed.avatarUrl
+          : "",
       recipes: parsed.recipes ?? [],
       diary: parsed.diary ?? [],
       weights: parsed.weights ?? [],
@@ -109,6 +115,10 @@ export function isFavoriteFood(data: AppData, fdcId: number): boolean {
 
 export function updateDisplayName(data: AppData, displayName: string): AppData {
   return { ...data, displayName: displayName.trim() };
+}
+
+export function updateAvatar(data: AppData, avatarUrl: string): AppData {
+  return { ...data, avatarUrl };
 }
 
 export function todayISO(): string {

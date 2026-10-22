@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { BookmarkPlus, MoreVertical, Plus, Settings2, Trash2 } from "lucide-react";
 import { useStore } from "@/components/store-provider";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import {
   CalorieHero,
   MacroStrip,
@@ -208,7 +209,15 @@ export function DiaryView() {
           )}
           aria-label="Open settings"
         >
-          <Settings2 className="size-4" />
+          {data.avatarUrl ? (
+            <ProfileAvatar
+              src={data.avatarUrl}
+              name={data.displayName}
+              className="size-full"
+            />
+          ) : (
+            <Settings2 className="size-4" />
+          )}
         </Link>
       </div>
 
